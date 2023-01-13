@@ -18,7 +18,7 @@ def plot_hexbin_frame(df, norm, corners, ll0, gridsize, bCB, cbarlims):
 
     # Put lat & long in basemap format
     x, y = m(df['LONGITUDE'], df['LATITUDE'])
-    # Normalize by number of yrs. to get total fire size per yr.
+    # Normalize by number of yrs. to get total fire size in 1000's per yr.
     colours = df['FIRE_SIZE']/norm
 
     h = m.hexbin(x, y, C=colours, gridsize=gridsize,bins='log',
@@ -27,12 +27,14 @@ def plot_hexbin_frame(df, norm, corners, ll0, gridsize, bCB, cbarlims):
 
     # frrom input: only do a colourbar on some frames
     if(bCB):
-        cb = m.colorbar(location='top', format='%.f')
-        cb.set_label(label="Amount of wildfires [acres burned/year]", size=15)
+        cb = m.colorbar(location='top')
+        cb.set_label(label="Total area affected by wildfire [acres/year]", size=13)
 
-        cb.ax.tick_params(labelsize=13)
+        cb.ax.tick_params(labelsize=11)
         cb.ax.xaxis.set_ticks_position('top')
         cb.ax.xaxis.set_label_position('top')
+        #cb.ax.set_yticks([0.1, 1, 10, 100, 1000])
+        #cb.ax.set_yticklabels(['0.1', '1', '10', '100', '1000'])
 
     # return the PolyCollection output by hexbin() to be used in main notebook
     return h
@@ -70,8 +72,8 @@ def plot_hexbin_frame_diff(df, norm, corners, ll0, gridsize, bCB, cbarlims):
     # frrom input: only do a colourbar on some frames
     if(bCB):
         cb = m.colorbar(location='bottom')
-        cb.set_label(label="Percent change in acres burned between \'10-\'19 and \'00-\'09", size=16)
-        cb.ax.tick_params(labelsize=14)
+        cb.set_label(label="Percent change in acres burned between \'10-\'19 and \'00-\'09", size=12)
+        cb.ax.tick_params(labelsize=12)
 
     # return the PolyCollection output by hexbin() to be used in main notebook
     return h
