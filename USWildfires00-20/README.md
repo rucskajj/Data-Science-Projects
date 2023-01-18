@@ -1,4 +1,4 @@
-# U.S.A Wildfires from 1992-2020
+# U.S.A. Wildfires from 1992-2020
 
 An analysis of a [public dataset](https://www.kaggle.com/datasets/behroozsohrabi/us-wildfire-records-6th-edition) on 2.3 Million wildfires between 1992-2020. A summary of my analysis is available [here](https://rucskajj.github.io/Data-Science-Projects/US_Wildfires_Analysis.html).
 
