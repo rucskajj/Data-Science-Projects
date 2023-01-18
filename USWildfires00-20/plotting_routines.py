@@ -25,7 +25,7 @@ def plot_hexbin_frame(df, norm, corners, ll0, gridsize, bCB, cbarlims):
             reduce_C_function = np.sum,
             cmap = 'YlOrRd', vmin=cbarlims[0], vmax=cbarlims[1])
 
-    # frrom input: only do a colourbar on some frames
+    # from input: only do a colourbar on some frames
     if(bCB):
         cb = m.colorbar(location='top')
         cb.set_label(label="Total area affected by wildfire [acres/year]", size=13)
@@ -33,8 +33,6 @@ def plot_hexbin_frame(df, norm, corners, ll0, gridsize, bCB, cbarlims):
         cb.ax.tick_params(labelsize=11)
         cb.ax.xaxis.set_ticks_position('top')
         cb.ax.xaxis.set_label_position('top')
-        #cb.ax.set_yticks([0.1, 1, 10, 100, 1000])
-        #cb.ax.set_yticklabels(['0.1', '1', '10', '100', '1000'])
 
     # return the PolyCollection output by hexbin() to be used in main notebook
     return h
@@ -99,7 +97,6 @@ def plot_firesize_overtime(med, mean, summ, count, title):
     ax2=ax.twinx()
     ax2.plot(summ/1e6, '.-', color='C4', lw=2)
     ax2.set_ylabel("Sum of wildfire size [millions of acres]", fontsize=10, color='C4',labelpad=15)
-    #ax2.ticklabel_format(style='sci', axis='y')# scilimits=(0,7))
     ax2.ticklabel_format(style='plain',axis='y')
     
     ax.set_xlim([med.index.min(), med.index.max()])
@@ -134,8 +131,6 @@ def plot_firesizeclass_2frame(subdf, df_lrg, labelstr, size_classes):
     ax.text(0.70, 0.90, "All fires", fontsize=14, transform=ax.transAxes)
     ax.set_xlim([sumfsize.index.min(), sumfsize.index.max()])
     ax.legend(title=" U.S. Fire\nSize Class",frameon=False, loc='upper left')
-    
-    #ax.set_ylabel("Sum of wildfire size divided by the mean", fontsize=12)
 
     ai = 0
     ax = axs[1]
