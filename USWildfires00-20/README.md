@@ -4,7 +4,7 @@ An analysis of a [public dataset](https://www.kaggle.com/datasets/behroozsohrabi
 
 Dependencies to run the Jupyter Notebook include numpy, pandas, matplotlib, IPython, and [basemap](https://github.com/matplotlib/basemap).
 
-Before running the notebook, you will need to download the dataset from [Kaggle](https://www.kaggle.com/datasets/behroozsohrabi/us-wildfire-records-6th-edition), then use the `read_sqlite.py` script. to create a pandas `dataframe` that the notebook reads. Explicitly, to use the script as is:
+Before running the notebook, you will need to download the dataset from [Kaggle](https://www.kaggle.com/datasets/behroozsohrabi/us-wildfire-records-6th-edition), then use the `read_sqlite.py` script to create a pandas `dataframe` that the notebook reads. Explicitly, to use the script as is:
 * Create a directory at the repo root called `full-data-set/`
 * Put the `data.sqlite` file from the downloaded dataset in the directory `full-data-set/`
 * Create a directory at the repo root called `pandas-dfs/`
