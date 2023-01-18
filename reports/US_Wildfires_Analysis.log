@@ -17,49 +17,76 @@ Traceback (most recent call last):
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
-discday = df['DISCOVERY_DOY'].replace('', np.nan).dropna().astype('int64')
-discday_lf = df_lrg['DISCOVERY_DOY'].replace('', np.nan).dropna().astype('int64')
+years_sm = sum_all.index
+fire_sum = sum_all.values/1e6
+years = years_sm.copy()
+# add constant term for statsmodels git
+years_sm = sm.add_constant(years_sm)
 
-days_in_months = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] # Setting Feb = 29 days
-month_bins = np.concatenate([[0],np.cumsum(days_in_months)])
-month_ticks = (0.5*(month_bins[1::]-month_bins[0:-1:])+month_bins[0:-1:])
-week_bins = np.arange(0,372,7)
-week_bins[-1] = 366
+# fit model with Ordinary Least Squares technique
+result = sm.OLS(fire_sum, years_sm).fit()
+fitparams = result.params
+#print(result.summary())
 
-fig, ax = plt.subplots(figsize=[5,3.5])
+fig, axes = plt.subplots(2,2, gridspec_kw={'width_ratios': [3, 1]}, figsize=[8,9])
+plt.subplots_adjust(wspace=0.0, hspace=0.0)
+axes[0,1].axis("off")
 
-norm = 28 # to get bin values in number of fires per year
-hist, bin_edges = np.histogram(discday, bins=week_bins)
-ax.stairs(hist/norm, bin_edges, lw=2, color='C0')
-ax.set_ylabel("Count per year (all fires)", fontsize=12, color='C0')
+ax = axes[0,0]
+ax.plot(sum_all/1e6, '.-', ms=10, color='C4')
+ax.plot(yr, result.fittedvalues, color='k')
+ax.set_xlim([yr.min()-1, yr.max()+1])
+ax.set_ylabel("Sum of wildfire size [millions of acres]", fontsize=12)
+ax.set_title("Linear fit to total annual wildfire damage", fontsize=14, pad=5)
 
-ax2=ax.twinx()
-hist, bin_edges = np.histogram(discday_lf, bins=week_bins)
-ax2.stairs(hist/norm, bin_edges, lw=2, color='C3')
-ax2.set_ylabel("Count per year (large fires)", fontsize=12, color='C3')
+ax.text(1992, 9.5,
+        "slope: {:.3f}$\pm${:.3f}".format(result.params[1], result.bse[1]),
+       fontsize=12)
 
-for mb in month_bins[1:-1]:
-    ax2.vlines(mb, 0, 100, color='k', ls='-', alpha=0.2, zorder=1)
-ax2.set_ylim([0,100])
+# Residuals, in two units
+ax = axes[1,0]
+residlim = 4.5
+ax.plot(yr, result.resid,
+        '.', ms=14, color='C6')
+ax.set_xlim([yr.min()-1, yr.max()+1])
+# Units of fire sum (millions of acres)
+ax.set_ylim([-residlim, residlim])
+ax.hlines(0.0, yr.min()-1, yr.max()+1, ls='--', color='k', alpha=0.3)
+ax.set_ylabel("Residuals [millions of acres]", fontsize=12)
+ax.set_xlabel("Year", fontsize=12)
 
-ax.set_xlim(0,366)
-ax.set_xticks(days_ticks)
-ax.set_xticklabels(["Jan.","Feb.","Mar.","Apr.","May","Jun","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."])
-ax.set_xlabel('Time of year', fontsize=12)
-ax.set_title('Distribution of number of fires over time of year')
+ax2 = ax.twinx()
+# Units of standardized residuals
+ax2.set_ylim([-residlim/np.sqrt(result.mse_resid),
+              residlim/np.sqrt(result.mse_resid)])
+ax2.spines["left"].set_position(("axes", -0.2))
+ax2.spines["left"].set_visible(True)
+ax2.yaxis.set_label_position('left')
+ax2.yaxis.set_ticks_position('left')
+ax2.set_ylabel("Standardized residuals (units of std. dv.)", fontsize=12)
+
+# Histogram of residuals
+ax = axes[1,1]
+bins = np.linspace(-residlim, residlim, 11)
+ax.hist(result.resid, bins=bins, color='C6',
+        orientation="horizontal")
+ax.set_xticks([2,4,6])
+ax.set_yticklabels("")
+ax.set_ylim([-residlim, residlim])
+ax.set_xlabel("Count", fontsize=11)
 
 plt.show()
 ------------------
 
 [0;31m---------------------------------------------------------------------------[0m
 [0;31mNameError[0m                                 Traceback (most recent call last)
-[0;32m/tmp/ipykernel_217/1833137881.py[0m in [0;36m<module>[0;34m[0m
-[1;32m     25[0m [0;34m[0m[0m
-[1;32m     26[0m [0max[0m[0;34m.[0m[0mset_xlim[0m[0;34m([0m[0;36m0[0m[0;34m,[0m[0;36m366[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
-[0;32m---> 27[0;31m [0max[0m[0;34m.[0m[0mset_xticks[0m[0;34m([0m[0mdays_ticks[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
-[0m[1;32m     28[0m [0max[0m[0;34m.[0m[0mset_xticklabels[0m[0;34m([0m[0;34m[[0m[0;34m"Jan."[0m[0;34m,[0m[0;34m"Feb."[0m[0;34m,[0m[0;34m"Mar."[0m[0;34m,[0m[0;34m"Apr."[0m[0;34m,[0m[0;34m"May"[0m[0;34m,[0m[0;34m"Jun"[0m[0;34m,[0m[0;34m"Jul."[0m[0;34m,[0m[0;34m"Aug."[0m[0;34m,[0m[0;34m"Sep."[0m[0;34m,[0m[0;34m"Oct."[0m[0;34m,[0m[0;34m"Nov."[0m[0;34m,[0m[0;34m"Dec."[0m[0;34m][0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
-[1;32m     29[0m [0max[0m[0;34m.[0m[0mset_xlabel[0m[0;34m([0m[0;34m'Time of year'[0m[0;34m,[0m [0mfontsize[0m[0;34m=[0m[0;36m12[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0;32m/tmp/ipykernel_3364/3505951945.py[0m in [0;36m<module>[0;34m[0m
+[1;32m     16[0m [0max[0m [0;34m=[0m [0maxes[0m[0;34m[[0m[0;36m0[0m[0;34m,[0m[0;36m0[0m[0;34m][0m[0;34m[0m[0;34m[0m[0m
+[1;32m     17[0m [0max[0m[0;34m.[0m[0mplot[0m[0;34m([0m[0msum_all[0m[0;34m/[0m[0;36m1e6[0m[0;34m,[0m [0;34m'.-'[0m[0;34m,[0m [0mms[0m[0;34m=[0m[0;36m10[0m[0;34m,[0m [0mcolor[0m[0;34m=[0m[0;34m'C4'[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0;32m---> 18[0;31m [0max[0m[0;34m.[0m[0mplot[0m[0;34m([0m[0myr[0m[0;34m,[0m [0mresult[0m[0;34m.[0m[0mfittedvalues[0m[0;34m,[0m [0mcolor[0m[0;34m=[0m[0;34m'k'[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[0m[1;32m     19[0m [0max[0m[0;34m.[0m[0mset_xlim[0m[0;34m([0m[0;34m[[0m[0myr[0m[0;34m.[0m[0mmin[0m[0;34m([0m[0;34m)[0m[0;34m-[0m[0;36m1[0m[0;34m,[0m [0myr[0m[0;34m.[0m[0mmax[0m[0;34m([0m[0;34m)[0m[0;34m+[0m[0;36m1[0m[0;34m][0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
+[1;32m     20[0m [0max[0m[0;34m.[0m[0mset_ylabel[0m[0;34m([0m[0;34m"Sum of wildfire size [millions of acres]"[0m[0;34m,[0m [0mfontsize[0m[0;34m=[0m[0;36m12[0m[0;34m)[0m[0;34m[0m[0;34m[0m[0m
 
-[0;31mNameError[0m: name 'days_ticks' is not defined
-NameError: name 'days_ticks' is not defined
+[0;31mNameError[0m: name 'yr' is not defined
+NameError: name 'yr' is not defined
 

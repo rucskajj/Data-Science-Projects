@@ -1,0 +1,10 @@
+.cell_output {
+	  display: flex;
+	    align-items: center;
+	      text-align: center;
+      }
+      .output {
+	        display: flex;
+		  align-items: center;
+		    text-align: center;
+	    }
