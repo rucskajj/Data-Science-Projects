@@ -87,7 +87,10 @@ def plot_firesize_overtime(med, mean, summ, count, title):
     ax2=ax.twinx()
     ax2.plot(mean, '.-', color='#616160', lw=2)
     ax2.set_ylabel("Mean fire size [acres]", fontsize=12, color='#616160')
-
+    
+    ax.tick_params('y', direction='in')
+    ax.tick_params('x', direction='inout')
+    ax2.tick_params('y', direction='in')
     ax.grid(visible=True, zorder=-1, alpha=0.3)
     ax.set_title(title, pad=15)
     
@@ -98,6 +101,9 @@ def plot_firesize_overtime(med, mean, summ, count, title):
     ax2.plot(summ/1e6, '.-', color='C4', lw=2)
     ax2.set_ylabel("Sum of wildfire size [millions of acres]", fontsize=10, color='C4',labelpad=15)
     ax2.ticklabel_format(style='plain',axis='y')
+    ax.tick_params('y', direction='in')
+    ax.tick_params('x', direction='inout')
+    ax2.tick_params('y', direction='in')
     
     ax.set_xlim([med.index.min(), med.index.max()])
     ax.set_xlabel("Year", fontsize=14, labelpad=10)
@@ -130,6 +136,9 @@ def plot_firesizeclass_2frame(subdf, df_lrg, labelstr, size_classes):
     xticks[-2].label1.set_visible(False)
     ax.text(0.70, 0.90, "All fires", fontsize=14, transform=ax.transAxes)
     ax.set_xlim([sumfsize.index.min(), sumfsize.index.max()])
+    ax.tick_params('y', direction='in')
+    ax.tick_params('x', direction='inout')
+    ax.yaxis.set_ticks_position('both')
     ax.legend(title=" U.S. Fire\nSize Class",frameon=False, loc='upper left')
 
     ai = 0
@@ -148,6 +157,9 @@ def plot_firesizeclass_2frame(subdf, df_lrg, labelstr, size_classes):
         
     ax.text(0.10, 0.90, labelstr, fontsize=14, transform=ax.transAxes)
     ax.set_xlim([sumfsize.index.min(), sumfsize.index.max()])
+    ax.tick_params('y', direction='in')
+    ax.tick_params('x', direction='inout')
+    ax.yaxis.set_ticks_position('both')
     
     fig.add_subplot(111, frameon=False)
     plt.xticks([]); plt.yticks([]);
