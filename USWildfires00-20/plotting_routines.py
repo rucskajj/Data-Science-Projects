@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 
 def plot_hexbin_frame(df, norm, corners, ll0, gridsize, bCB, cbarlims):
-    """For plotting the total annual Wildfire size in acres."""
+    """For plotting the spatial distribution of wildfire size."""
 
     # set up basemap
     waterclr = '#D9D9D9'; landclr  = '#717171';
@@ -25,7 +25,7 @@ def plot_hexbin_frame(df, norm, corners, ll0, gridsize, bCB, cbarlims):
             reduce_C_function = np.sum,
             cmap = 'YlOrRd', vmin=cbarlims[0], vmax=cbarlims[1])
 
-    # from input: only do a colourbar on some frames
+    # from arg list: only do a colourbar on some frames
     if(bCB):
         cb = m.colorbar(location='top')
         cb.set_label(label="Total area affected by wildfire [acres/year]", size=13)
@@ -38,7 +38,8 @@ def plot_hexbin_frame(df, norm, corners, ll0, gridsize, bCB, cbarlims):
     return h
 
 def plot_hexbin_frame_diff(df, norm, corners, ll0, gridsize, bCB, cbarlims):
-    """For plotting the percent change in annual Wildfire size."""
+    """For plotting the spatial distribution of the percent change 
+        in annual Wildfire size."""
 
     # set up basemap
     waterclr = '#D9D9D9'; landclr  = '#717171';
@@ -67,7 +68,7 @@ def plot_hexbin_frame_diff(df, norm, corners, ll0, gridsize, bCB, cbarlims):
             reduce_C_function = np.sum,          
             vmin=cbarlims[0], vmax=cbarlims[1])
 
-    # frrom input: only do a colourbar on some frames
+    # from arg list: only do a colourbar on some frames
     if(bCB):
         cb = m.colorbar(location='bottom')
         cb.set_label(label="Percent change in acres burned between \'10-\'19 and \'00-\'09", size=12)
@@ -77,6 +78,7 @@ def plot_hexbin_frame_diff(df, norm, corners, ll0, gridsize, bCB, cbarlims):
     return h
 
 def plot_firesize_overtime(med, mean, summ, count, title):
+    """Plot the mediam, mean, sum and count of fire activity."""
     fig, axs = plt.subplots(2, 1, sharex=True, figsize=[4.5,6])
     plt.subplots_adjust(hspace=0.0)
 
@@ -113,6 +115,9 @@ def plot_firesize_overtime(med, mean, summ, count, title):
     plt.show()
 
 def plot_firesizeclass_2frame(subdf, df_lrg, labelstr, size_classes):
+    """Plots the total wildfire size normalized by the mean in the data set.
+    
+    Two frames: left for all fires, right for a subset (subdf), either from con. U.S. or Alaska."""
     fig, axs = plt.subplots(1,2, sharey=True, figsize=[10,4])
     plt.subplots_adjust(wspace=0.0)
     
@@ -121,10 +126,11 @@ def plot_firesizeclass_2frame(subdf, df_lrg, labelstr, size_classes):
     zorders = [1, 0, 0, 0]
     ai = 0
     ax = axs[0]
-    for sc in np.flip(size_classes):
+    
+    for sc in np.flip(size_classes): # loop through largest fires first
         df1 = df_lrg.loc[(df_lrg['FIRE_SIZE_CLASS'] == sc),['FIRE_YEAR', 'FIRE_SIZE']]
-        sumfsize = df1.groupby(['FIRE_YEAR'])['FIRE_SIZE'].sum()#.to_numpy()
-        #print(totfiresize)
+        sumfsize = df1.groupby(['FIRE_YEAR'])['FIRE_SIZE'].sum()
+        # Use pandas grouby() to sum fire size in each year
         ax.plot(sumfsize/np.mean(sumfsize), ".-", lw=2,
                 color=colours[ai], alpha=alphas[ai], zorder=zorders[ai],
                 label=sc)
@@ -143,10 +149,10 @@ def plot_firesizeclass_2frame(subdf, df_lrg, labelstr, size_classes):
 
     ai = 0
     ax = axs[1]
-    for sc in np.flip(size_classes):
+    for sc in np.flip(size_classes): # loop through largest fires first
         df1 = subdf.loc[(subdf['FIRE_SIZE_CLASS'] == sc),['FIRE_YEAR', 'FIRE_SIZE']]
-        sumfsize = df1.groupby(['FIRE_YEAR'])['FIRE_SIZE'].sum()#.to_numpy()
-        #print(totfiresize)
+        sumfsize = df1.groupby(['FIRE_YEAR'])['FIRE_SIZE'].sum()
+        # Use pandas grouby() to sum fire size in each year
         ax.plot(sumfsize/np.mean(sumfsize), ".-", lw=2,
                 color=colours[ai], alpha=alphas[ai], zorder=zorders[ai],
                 label=sc)

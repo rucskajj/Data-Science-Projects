@@ -3,10 +3,9 @@ import sqlite3
 
 # Read SQLite query into a pandas Dataframe
 con = sqlite3.connect('./full-data-set/data.sqlite')
-#con = sqlite3.connect('./full-data-set/practice.sqlite')
-#df2test = pd.read_sql_query("SELECT * FROM yearlatlong", con)
-#print(df2test)
 
+# SQL query to take only a subset of the data
+# from the database
 sqlquery = '''
 
 SELECT
@@ -34,9 +33,5 @@ df = pd.read_sql_query(sqlquery, con)
 con.close()
 
 df_dir = './pandas-dfs/'
-
-#print(df)
 df_filename = 'fireyear-to-lat-long.pkl'
-df.to_pickle(df_dir+df_filename)
-
-
+df.to_pickle(df_dir+df_filename) # Save pandas df to be read in main .ipynb file
