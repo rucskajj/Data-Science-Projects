@@ -28,7 +28,7 @@
                 font-size: 34px;
             }
 
-            /* Increase the font size of the h1 element */
+            /* Set the font size of the p element */
             .header p {
                 font-size: 20px;
             }
@@ -43,6 +43,13 @@
             padding-right: 25%;
             line-height: 1.5;
         }
+
+            /* Increase the font size of the h1 element */
+            .main h1 {
+                font-size: 16px;
+                font-weight: bold;
+                text-decoration: underline;
+            }
     </style>
 </head>
 <body>
@@ -55,12 +62,8 @@
     </div>
 
     <div class="main">
-        <br><br>
-        The goal of this project is to map the walking accessibility of the public transit network in Hamilton, ON. A map was produced using QGIS, and is available through this <a href="https://qgiscloud.com/rucskajj/building_transit_map-1-truncated-cloud/">link</a></b>. The colour of each building tracks the frequency that buses arrive at bus stops within walking distance. I refer to this quantity as the <b>"transit count"</b>, and describe how it is calculated in more detail below.
+        The goal of this project is to map the walking accessibility of the public transit network in Hamilton, ON. A map was produced using QGIS, and is available through this <a href="https://qgiscloud.com/rucskajj/building_transit_map-1-truncated-cloud/">link</a></b>. The colour of each building tracks the frequency that buses arrive at bus stops within walking distance--bright yellow is high frequency, dark blue/purple is low frequency. I refer to this quantity as the <b>"transit count"</b>, and describe how it is calculated in more detail below.
        
-        <br><br>
-        The two input data sets come from Open Street Map and the Hamilton Street Railway's GTFS repository. The HSR is a bus-only transit network. The data used here applies to the schedule on September 5, 2025.
-
         <br><br>
         Some tips for interpreting, viewing, and navigating the map:
         <ul>
@@ -69,21 +72,24 @@
             <li>Specific streets, neighbourhoods, and addresses can be located using the search bar at the top.</li>
         </ul>
 
+        <h1>Data & Methods</h1>
+        The two input data sets come from Open Street Map and the Hamilton Street Railway's GTFS repository. The HSR is a bus-only transit network. The data used here applies to the schedule on September 5, 2025.
+        <br><br>
         The <b>"transit count"</b> number is calculated as follows:
         <ul>
-           <li>Using the QGIS GTFS-GO plug-in, the <b>number of buses</b> arriving at each HSR bus stop over the course of the selected 24-hour period is calculated.</li>
-           <li>For individual, randomly selected buildings, the bus stops within 400 metres radius are identified. (See "improvements" below for a discussion on why buildings were randomly selected.)</li>
+           <li>Using the QGIS GTFS-GO plugin, the <b>number of buses</b> arriving at each HSR bus stop over the course of the selected 24-hour period is calculated.</li>
+           <li>For individual, randomly selected buildings, the bus stops within a 400 metre radius are identified. (See "improvements" below for a discussion on why buildings were randomly selected.)</li>
            <li>Using the native Network Analysis algorithm in QGIS, the shortest walking distance from each building to all nearby bus stops is calculated.</li>
            <li>For each of the nearby stops, a <b>weight</b> was assigned, according to walking distance: stops within 300 m recieved a weight of 1, stops beyond 400 m recieved a weight of zero, and stops between 300 m and 400 m recieved a weight between 1 and 0 that decreased linearly with distance.</li>
-           <li>The total <b>transit count</b> for each building was calculated as a sum of <b>weight</b> times <b>number of bus "arrivals"</b> for all nearby bus stops.</li>
+           <li>The total <b>transit count</b> for each building was calculated as a sum of <b>weight</b> multpilied by the <b>number of bus "arrivals"</b> for all nearby bus stops. (This number was rounded to the nearest integer for display on the map.)</li>
         </ul>
 
-        Some insights gleaned:
+        <h1>Results & insights:</h1>
         <ul>
             <li>Test text 1.</li>
         </ul>
 
-        Future improvements:
+        <h1>Future improvements:</h1> 
         <ul>
             <li>Obviously, it would be better to do this calculation for all of the houses in the map. The current random sampling is driven by 1) long calculation times in the network analysis step, and 2) data size limits in the free QGIS Cloud service. I'd like to find a way to run the calculation in parallel, and/or more efficiently, to include the rest of the city.</li>
             <li>For some reason, the Open Street Map data set does not include many buildings in East Hamilton. Statistics Canada provided building and road data sets which may be higher quality.</li>
