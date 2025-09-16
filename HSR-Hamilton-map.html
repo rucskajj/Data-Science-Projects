@@ -48,31 +48,34 @@
 <body>
 
     <div class="header">
-        <h1>Joey Rucska</h1>
-        <p>Map of Public Transit Accessibility in Hamilton, ON</p>
+        <h1>Description for a Map of Public Transit Accessibility in Hamilton, ON</h1>
+        <p><a href="https://qgiscloud.com/rucskajj/building_transit_map-1-truncated-cloud/">Map link</a></b></p>
+        <p>Joey Rucska</p>
+        <p>Last updated on 16 September, 2025.</p>
     </div>
 
     <div class="main">
-       <b> The QGIS Map for this project is available through this <a href="https://qgiscloud.com/rucskajj/building_transit_map-1-truncated-cloud/">link</a></b>.
         <br><br>
-        
-        Some text briefly describing the motivation, algorithm, and map. 
+        The goal of this project is to map the walking accessibility of the public transit network in Hamilton, ON. A map was produced using QGIS, and is available through this <a href="https://qgiscloud.com/rucskajj/building_transit_map-1-truncated-cloud/">link</a></b>. The colour of each building tracks the frequency that buses arrive at bus stops within walking distance. I refer to this quantity as the <b>"transit count"</b>, and describe how it is calculated in more detail below.
+       
         <br><br>
-        Some tips for viewing the map:
+        The two input data sets come from Open Street Map and the Hamilton Street Railway's GTFS repository. The HSR is a bus-only transit network. The data used here applies to the schedule on September 5, 2025.
+
+        <br><br>
+        Some tips for interpreting, viewing, and navigating the map:
         <ul>
             <li>The numerical value represented by the colour is visible at a scale of 1:2000 and below. The street names will also render at this scale.</li>
-            <li>Viewing the map without the "Hamilton Street Railway" layer rendered makes the results of this calculation </li>
-            <li> </li>
+            <li>Viewing the map without the "Hamilton Street Railway" layer rendered makes the distribution of the <b>transit count</b> quantity more apparent.</li>
+            <li>Specific streets, neighbourhoods, and addresses can be located using the search bar at the top.</li>
         </ul>
 
         The <b>"transit count"</b> number is calculated as follows:
         <ul>
-           <li>The two input data sets come from Open Street Map and the Hamilton Street Railway's GTFS repository. The HSR is a bus-only transit network. The data used here applies to the schedule on September 5, 2025.</li>
-           <li>Using the QGIS GTFS-GO plug-in, the <b>number of buses</b> arriving at each stop during the selected 24-hour period was calculated.</li>
-           <li>For individual, randomly selected buildings, the bus stops within 400 metres radius were identified. (See "improvements" below for a discussion on why buildings were randomly selected.)</li>
-           <li>Using the native Network Analysis algorithm in QGIS, the walking distance from each building to each nearby bus stop was calculated.</li>
-           <li>For each stop, a <b>weight</b> was assigned, according to walking distance: stops within 300 m recieved a weight of 1, stops beyond 400 m recieved a weight of zero, and stops between 300 m and 400 m recieved a weight between 1 and 0 that decreased linearly with distance.</li>
-           <li>The total <b>transit count</b> for each building was calculated as a sum of <b>weight</b> times <b>number of bus "visits"</b> for all nearby bus stops.</li>
+           <li>Using the QGIS GTFS-GO plug-in, the <b>number of buses</b> arriving at each HSR bus stop over the course of the selected 24-hour period is calculated.</li>
+           <li>For individual, randomly selected buildings, the bus stops within 400 metres radius are identified. (See "improvements" below for a discussion on why buildings were randomly selected.)</li>
+           <li>Using the native Network Analysis algorithm in QGIS, the shortest walking distance from each building to all nearby bus stops is calculated.</li>
+           <li>For each of the nearby stops, a <b>weight</b> was assigned, according to walking distance: stops within 300 m recieved a weight of 1, stops beyond 400 m recieved a weight of zero, and stops between 300 m and 400 m recieved a weight between 1 and 0 that decreased linearly with distance.</li>
+           <li>The total <b>transit count</b> for each building was calculated as a sum of <b>weight</b> times <b>number of bus "arrivals"</b> for all nearby bus stops.</li>
         </ul>
 
         Some insights gleaned:
@@ -80,15 +83,13 @@
             <li>Test text 1.</li>
         </ul>
 
-        Improvements to come:
+        Future improvements:
         <ul>
-            <li>Obviously, this calculation has only been done for a small subset of the houses in Hamilton. This is mostly driven by 1) long calculation times in the network analysis step, and 2) data size limits in the free QGIS Cloud service. I'd like to find a way to run the calculation in parallel, or more efficiently, to include the rest of the city.</li>
-            <li>For some reason, the Open Street Map data set does not include many buildings in East Hamilton. There are building and road data sets available from Statistics Canada that may be higher quality.</li>
+            <li>Obviously, it would be better to do this calculation for all of the houses in the map. The current random sampling is driven by 1) long calculation times in the network analysis step, and 2) data size limits in the free QGIS Cloud service. I'd like to find a way to run the calculation in parallel, and/or more efficiently, to include the rest of the city.</li>
+            <li>For some reason, the Open Street Map data set does not include many buildings in East Hamilton. Statistics Canada provided building and road data sets which may be higher quality.</li>
             <li>It's unclear how sensitive the above insights are to choices in the search distance parameter or weighting function parameters. Making a more efficient calculation will allow me to explore the affects of these choices.</li>
         </ul>
-
         <br> <br>
-        Last updated on 16 September, 2025.
     </div>
 
 </body>
