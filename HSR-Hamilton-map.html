@@ -18,7 +18,7 @@
         .header {
             padding: 40px;
             text-align: center;
-            background: #d44137;
+            background: #00578d;
             color: white;
             border-bottom: solid black
         }
@@ -53,21 +53,38 @@
     </div>
 
     <div class="main">
-        Some text briefly describing the motivation, algorithm, and map. 
-        <br>
-        Map is available through this <a href="https://qgiscloud.com/rucskajj/building_transit_map-1-truncated-cloud/">link</a>.
+       <b> The QGIS Map for this project is available through this <a href="https://qgiscloud.com/rucskajj/building_transit_map-1-truncated-cloud/">link</a></b>.
         <br><br>
-        A summary of the calculation, tips for viewing the map:
+        
+        Some text briefly describing the motivation, algorithm, and map. 
+        <br><br>
+        Some tips for viewing the map:
         <ul>
-            <li><a href="/Data-Science-Projects/US_Wildfires/index.html">link thing.</a> </li>
+            <li>The numerical value represented by the colour is visible at a scale of 1:2000 and below. The street names will also render at this scale.</li>
+            <li>Viewing the map without the "Hamilton Street Railway" layer rendered makes the results of this calculation </li>
+            <li> </li>
         </ul>
+
+        The <b>"transit count"</b> number is calculated as follows:
+        <ul>
+           <li>The two input data sets come from Open Street Map and the Hamilton Street Railway's GTFS repository. The HSR is a bus-only transit network. The data used here applies to the schedule on September 5, 2025.</li>
+           <li>Using the QGIS GTFS-GO plug-in, the <b>number of buses</b> arriving at each stop during the selected 24-hour period was calculated.</li>
+           <li>For individual, randomly selected buildings, the bus stops within 400 metres radius were identified. (See "improvements" below for a discussion on why buildings were randomly selected.)</li>
+           <li>Using the native Network Analysis algorithm in QGIS, the walking distance from each building to each nearby bus stop was calculated.</li>
+           <li>For each stop, a <b>weight</b> was assigned, according to walking distance: stops within 300 m recieved a weight of 1, stops beyond 400 m recieved a weight of zero, and stops between 300 m and 400 m recieved a weight between 1 and 0 that decreased linearly with distance.</li>
+           <li>The total <b>transit count</b> for each building was calculated as a sum of <b>weight</b> times <b>number of bus "visits"</b> for all nearby bus stops.</li>
+        </ul>
+
         Some insights gleaned:
         <ul>
             <li>Test text 1.</li>
         </ul>
+
         Improvements to come:
         <ul>
-            <li>Test text 2.</li>
+            <li>Obviously, this calculation has only been done for a small subset of the houses in Hamilton. This is mostly driven by 1) long calculation times in the network analysis step, and 2) data size limits in the free QGIS Cloud service. I'd like to find a way to run the calculation in parallel, or more efficiently, to include the rest of the city.</li>
+            <li>For some reason, the Open Street Map data set does not include many buildings in East Hamilton. There are building and road data sets available from Statistics Canada that may be higher quality.</li>
+            <li>It's unclear how sensitive the above insights are to choices in the search distance parameter or weighting function parameters. Making a more efficient calculation will allow me to explore the affects of these choices.</li>
         </ul>
 
         <br> <br>
