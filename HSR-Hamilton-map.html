@@ -33,6 +33,17 @@
                 font-size: 20px;
             }
 
+            /* Set the link colours */
+            /* unvisited */
+           .header a:link{
+                color: yellow;
+            }
+           .header a:visited{
+                color: black;
+            }
+           .header a:hover{
+                color: yellow;
+            }
 
         /* Main column */
         .main {
@@ -46,7 +57,8 @@
 
             /* Increase the font size of the h1 element */
             .main h1 {
-                font-size: 16px;
+                padding-top: 20px;
+                font-size: 20px;
                 font-weight: bold;
                 text-decoration: underline;
             }
@@ -74,7 +86,7 @@
 
         <h1>Data & Methods</h1>
         The two input data sets come from Open Street Map and the Hamilton Street Railway's GTFS repository. The HSR is a bus-only transit network. The data used here applies to the schedule on September 5, 2025.
-        <br><br>
+        <br>
         The <b>"transit count"</b> number is calculated as follows:
         <ul>
            <li>Using the QGIS GTFS-GO plugin, the <b>number of buses</b> arriving at each HSR bus stop over the course of the selected 24-hour period is calculated.</li>
