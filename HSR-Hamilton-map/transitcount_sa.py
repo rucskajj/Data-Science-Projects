@@ -136,9 +136,19 @@ if args.loopstart > len(allfids):
             " in the input layer.")
 
 
+# copy input arguments to variables
+lstart = args.loopstart
+lend = args.loopend
+skip = args.loopskip
+distance = args.distance
+
 # Do some initial prints
 print("num buildings:", len(allfids), "\n") 
 CRS_str = blyr.crs().authid()
+print("Starting index:", lstart)
+print("Ending index:", lend)
+print("Skip:", skip, "\n")
+
 if(bVerbose):
     print("num stops:", len(slyr.allFeatureIds()))
     print("num road network features:", len(rlyr.allFeatureIds()))
@@ -146,25 +156,15 @@ if(bVerbose):
     print("CRS:", CRS_str)
     print()
 
-    print("Starting index:", lstart)
-    print("Ending index:", lend)
-    print("Skip:", skip, "\n")
+# ---------------------- Main calculation loop ------------------------ #
 
-
-# ---------------------- Main calculation loop --------------------------- #
-
-# copy input arguments to variables
-lstart = args.loopstart
-lend = args.loopend
-skip = args.loopskip
-distance = args.distance # metres
-
+output_data = [] # a list for storing output data, building-by-building
 loopcount = lstart
 while(loopcount <= lend): # Loop over all buildings set by input indices
 
     fid = allfids[loopcount]
-    print("On loop "+str(int((loopcount-lstart)/skip+1))+\
-            " of "+str(int((lend-lstart)/skip+1)))
+    print("On loop "+str(int(loopcount))+\
+            " of "+str(int((lend-lstart)/skip+lstart)))
     if bVerbose: print("Loop fid:", fid)
 
     iterator = blyr.getFeatures(QgsFeatureRequest().setFilterFid(fid))
@@ -270,6 +270,10 @@ while(loopcount <= lend): # Loop over all buildings set by input indices
     # loop through all features in output from Network Analysis
     features_nw = nwlyr.getFeatures()
     sums = np.zeros((len(weight_tuples)))
+    
+    # a list for this building's output data
+    output_line = [feature['OBJECTID']]
+
     for feature_nw in features_nw:
         count = feature_nw['count']
         nwdist = feature_nw['cost']
@@ -288,6 +292,9 @@ while(loopcount <= lend): # Loop over all buildings set by input indices
                 sums[wti] += count*weight # transit_count=sum(count*weight)
             else:
                 sums[wti] += 0 # add zero if shortest path returned NULL
+    
+    for wti in range(len(weight_tuples)):
+        output_line.append(sums[wti]) # add tc to output
 
     print("Weightest cost sums:", sums)
     print()
@@ -295,8 +302,10 @@ while(loopcount <= lend): # Loop over all buildings set by input indices
     del(nwlyr)
     #del(exlyr) # Necessary if new layer was created for debugging
 
+    output_data.append(output_line) # add this building to global output
 
-# ---------------------- Clean up & close QGIS  --------------------- #
+
+# ---------------------- Clean up & close QGIS  ----------------------- #
 
 # deleting the layers is essential; get seg faults otherwise.
 del(blyr)
@@ -313,3 +322,18 @@ for temp_gpkg_str in [nwout_str, exout_str]:
             print(f"File '{file_path}' deleted successfully.")
         else:
             print(f"File '{file_path}' does not exist.")
+
+
+# ---------------------- Output data to file --------------------------- #
+
+outfile_str = "transit_counts_"+'{0:05}'.format(lstart)+".csv"
+if os.path.exists(outfile_str):
+    os.remove(outfile_str)
+
+import csv
+with open(outfile_str, "a", newline='') as f:
+    csv_writer = csv.writer(f,delimiter=',',
+            quotechar="|", quoting=csv.QUOTE_MINIMAL)
+    for line in output_data:
+        csv_writer.writerow(line)
+
