@@ -1,17 +1,38 @@
+# ---------------------- Set up input file paths ------------------------ #
+
+input_shapefiledir = "./inputdata/shapefiles/"
+# for me, blyr.shp holds the polygons for the buildings
+building_layer_str =input_shapefiledir+"blyr.shp"
+# for me, slyr.shp holds the points for the aggregated_stops layer 
+# output by GTFS-GO
+agg_stops_layer_str =input_shapefiledir+"slyr.shp" 
+
+# For some reason, I had to make a new .gpkg for my roads network
+# by booting QGIS GUI from the command line, then loading & saving the
+# roads network there. Likely a version compatability issue.
+input_gpkg_roads = "./inputdata/calc_input_roads.gpkg"
+road_network_layer_str = input_gpkg_roads+"|layername=roads_network"
+
+
+# ---------------------- Set up argparse --------------------------------- #
+
 import argparse
 import warnings
 parser = argparse.ArgumentParser(
         prog="transitcount_sa.py",
-        description="Calculates a \"transit count\" value (tc) for individual buildings based on several input .gpkg files.")
+        description="A stand alone (sa) QGIS script for calculating a \"transit count\" value (tc) for individual buildings based on several input .gpkg files.")
 parser.add_argument("-ls", "--loopstart", type=int,
         help="Index of first building to calculate a tc value.")
 parser.add_argument("-le", "--loopend", type=int,
         help="Index of last building to calculate a tc value.")
 parser.add_argument("-lp", "--loopskip", default=1, type=int,
         help="Number of buildings to skip over on each loop. lp of 1 means all buildings will get a tc value.")
+parser.add_argument("-d", "--distance", type=float, default=850,
+        help="Search distance/radius from each buidling to locate nearby stops. Units are metres.")
 parser.add_argument("-v", "--verbose", action="store_true")
 
 args = parser.parse_args()
+bVerbose = args.verbose
 
 if args.loopend is None:
     raise SystemExit("loopend parameter must be specified;"
@@ -31,6 +52,7 @@ if args.loopskip > (args.loopend-args.loopstart):
     warnings.warn("loopskip is larger than range given by"
     " [loopstart,loopend]; only 1 loop will be completed.", UserWarning)
 
+
 # ---------------------- Import other necessary modules ------------------ #
 
 import os
@@ -45,34 +67,36 @@ from processing.core.Processing import Processing
 
 import numpy as np
 
-# ---------------------- Define "Global" variables, functions ----------- #
 
-lstart = args.loopstart
-lend = args.loopend
-skip = args.loopskip
+# ---------------------- Define linear weighting function --------------- #
 
-
-distance = 850 # metres
-wstrt = 300 # metres
-wend = 400 # metres
-
-bVerbose = args.verbose
+# elements are [weight_start, weight_end], defining where the linear
+# weighting function should begin and end the sloped part
+# Notes: - units are metres
+#        - need to have weight_end > weight_start
+weight_tuples = [ [300, 400], [400,400] ]
 
 # calculate linear weighting function
-def calculateWeight(pathdist):
-    if(pathdist > wend): return 0.0
-    elif(pathdist < wstrt): return 1.0
+def calculateWeight(pathdist, ws, we):
+    if we < ws: 
+        print(f"Last values of weight function params: we={we}, ws={ws}")
+        raise SystemExit("The end point of the weighting function"
+            " must be larger than the beginning.")
+
+    if(pathdist > we): return 0.0
+    elif(pathdist < ws): return 1.0
     else:
         deltay = -1.0 # rise
         
-        if(wend==wstrt): deltax = 1e-4
-        else: deltax = wend-wstrt # run
+        if(we==ws): deltax = 1e-4 # run
+        else: deltax = we-ws # run
         
-        slope = deltay/deltax
-        yint = -slope*wend # guaranteed point on line is (dist,weight)=(wend, 0)
+        slope = deltay/deltax # rise/run
+        yint = -slope*we # guaranteed point on line is (dist,weight)=(we, 0)
         return slope*pathdist + yint
 
 
+# ---------------------- Start QGIS -------------------------------------- #
 
 qgs = QApplication([])
 QgsApplication.setPrefixPath("usr/", True)
@@ -85,25 +109,20 @@ Processing.initialize()
 #for alg in QgsApplication.processingRegistry().algorithms():
 #    print(f"{alg.id()} --> {alg.displayName()}")
 
-# ---------------------- Load data ---------------------------------- #
 
-# Made a new .gpkg for the roads network by booting QGIS from the
-# command line, then loading & saving the roads network there.
-input_gpkg_roads = "./calc_input_roads.gpkg"
-input_shapefiledir = "./shapefiles/"
+# ---------------------- Load & verify input data ------------------------ #
 
-# blyr.shp holds the polygons for the buildings
-blyr = QgsVectorLayer(input_shapefiledir+"blyr.shp", "ogr")
-# slyr.shp holds the "aggregated stops" point output by GTFS-GO
-slyr = QgsVectorLayer(input_shapefiledir+"slyr.shp", "ogr")
-rlyr = QgsVectorLayer(input_gpkg_roads+"|layername=roads_network", "ogr")
-# Check we loaded okay.
+blyr = QgsVectorLayer(building_layer_str, "ogr")
+slyr = QgsVectorLayer(agg_stops_layer_str, "ogr")
+rlyr = QgsVectorLayer(road_network_layer_str, "ogr")
+
+
 if not blyr.isValid():
-    print("Building layer failed to load.")
+    raise SystemExit("Building layer failed to load.")
 if not slyr.isValid():
-    print("Stops layer failed to load.")
+    raise SystemExit("Stops layer failed to load.")
 if not rlyr.isValid():
-    print("Roads layer failed to load.")
+    raise SystemExit("Roads layer failed to load.")
 
 # sort appears necessary here: layer fids appear to randomized every
 # time the layer is loaded, i.e., everytime the script is run. I need
@@ -116,9 +135,10 @@ if args.loopstart > len(allfids):
     raise SystemExit("loopstart out of range for number of buildings"
             " in the input layer.")
 
+
+# Do some initial prints
 print("num buildings:", len(allfids), "\n") 
 CRS_str = blyr.crs().authid()
-
 if(bVerbose):
     print("num stops:", len(slyr.allFeatureIds()))
     print("num road network features:", len(rlyr.allFeatureIds()))
@@ -130,10 +150,18 @@ if(bVerbose):
     print("Ending index:", lend)
     print("Skip:", skip, "\n")
 
-# ---------------------- Define parameters -------------------------- #
+
+# ---------------------- Main calculation loop --------------------------- #
+
+# copy input arguments to variables
+lstart = args.loopstart
+lend = args.loopend
+skip = args.loopskip
+distance = args.distance # metres
 
 loopcount = lstart
-while(loopcount <= lend):
+while(loopcount <= lend): # Loop over all buildings set by input indices
+
     fid = allfids[loopcount]
     print("On loop "+str(int((loopcount-lstart)/skip+1))+\
             " of "+str(int((lend-lstart)/skip+1)))
@@ -158,15 +186,14 @@ while(loopcount <= lend):
     # Create a layer of just this feature as input to extract distance
     layer_type_str = "Polygon"
     uri = f"{layer_type_str}?crs={CRS_str}"
-    memory_layer = QgsVectorLayer(uri, "Single Feature Layer", "memory")
+    feat_layer = QgsVectorLayer(uri, "Single Feature Layer", "memory")
 
     # Add fields & feature to the new layer
-    memory_layer.startEditing()
-    memory_layer.dataProvider().addAttributes(feature.fields())
-    memory_layer.updateFields()
-    memory_layer.dataProvider().addFeatures([feature])
-    memory_layer.commitChanges()
-
+    feat_layer.startEditing()
+    feat_layer.dataProvider().addAttributes(feature.fields())
+    feat_layer.updateFields()
+    feat_layer.dataProvider().addFeatures([feature])
+    feat_layer.commitChanges()
 
     '''
     # Some prints for confirming input to extract algorithm is correct
@@ -186,7 +213,7 @@ while(loopcount <= lend):
             # INPUT is destination (i.e. transit stops)
             # REFERENCE is the current building, stored in memory layer
             'INPUT': slyr,
-            'REFERENCE': memory_layer,
+            'REFERENCE': feat_layer,
             'DISTANCE': distance,
             'OUTPUT': exout_str
         },
@@ -203,7 +230,7 @@ while(loopcount <= lend):
     '''
 
     # Run the Network Analysis algorithm, calculating shortest distance
-    # from each starting point to each destination point within distance
+    # from each starting point to each transit stop within distance
     nwout_str = "TEMP_NW_"+'{0:05}'.format(lstart)
     nwshort_result = processing.run(
         "native:shortestpathpointtolayer",
@@ -240,22 +267,29 @@ while(loopcount <= lend):
     if bVerbose:
         print("Num. found destinations", len(nwlyr.allFeatureIds()))
 
-    # loop through all features in starting point layer
+    # loop through all features in output from Network Analysis
     features_nw = nwlyr.getFeatures()
-    sum = 0
+    sums = np.zeros((len(weight_tuples)))
     for feature_nw in features_nw:
         count = feature_nw['count']
         nwdist = feature_nw['cost']
         stopid = feature_nw['similar__1']
 
-        # sometimes you get NULL from shortest path calculation
-        if( isinstance(count, int) and isinstance(nwdist, float)):                
-            weight = calculateWeight(nwdist)
-            if bVerbose: print(stopid, count, nwdist, weight)
-            sum += count*weight
-        else:
-            sum += 0
-    print("Weightest cost sum:", sum)
+        for wti in range(len(weight_tuples)):
+            # sometimes you get NULL from shortest path calculation
+            if( isinstance(count, int) and isinstance(nwdist, float)):
+
+                # Calculate weighting based on path distance
+                weight = calculateWeight(nwdist,
+                    weight_tuples[wti][0], weight_tuples[wti][1])
+                
+                if bVerbose: print(stopid, count, nwdist, weight)
+                
+                sums[wti] += count*weight # transit_count=sum(count*weight)
+            else:
+                sums[wti] += 0 # add zero if shortest path returned NULL
+
+    print("Weightest cost sums:", sums)
     print()
     loopcount += skip
     del(nwlyr)
@@ -263,6 +297,8 @@ while(loopcount <= lend):
 
 
 # ---------------------- Clean up & close QGIS  --------------------- #
+
+# deleting the layers is essential; get seg faults otherwise.
 del(blyr)
 del(slyr)
 del(rlyr)
