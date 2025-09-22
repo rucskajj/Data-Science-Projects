@@ -1,3 +1,38 @@
+import argparse
+import warnings
+parser = argparse.ArgumentParser(
+        prog="transitcount_sa.py",
+        description="Calculates a \"transit count\" value (tc) for individual buildings based on several input .gpkg files.")
+parser.add_argument("-ls", "--loopstart", type=int,
+        help="Index of first building to calculate a tc value.")
+parser.add_argument("-le", "--loopend", type=int,
+        help="Index of last building to calculate a tc value.")
+parser.add_argument("-lp", "--loopskip", default=1, type=int,
+        help="Number of buildings to skip over on each loop. lp of 1 means all buildings will get a tc value.")
+parser.add_argument("-v", "--verbose", action="store_true")
+
+args = parser.parse_args()
+
+if args.loopend is None:
+    raise SystemExit("loopend parameter must be specified;"
+            " see -h command line argument for help.")
+if args.loopstart is None:
+    raise SystemExit("loopstart parameter must be specified;"
+            " see -h command line argument for help.")
+if args.loopend < 0:
+    raise SystemExit("loopend must be a positive number.")
+if args.loopstart < 0:
+    raise SystemExit("loopstart must be a positive number.")
+if args.loopskip < 0:
+    raise SystemExit("loopskip must be a positive number.")
+if args.loopend < args.loopstart:
+    raise SystemExit("loopend must be greater than or equal to loopstart.")
+if args.loopskip > (args.loopend-args.loopstart):
+    warnings.warn("loopskip is larger than range given by"
+    " [loopstart,loopend]; only 1 loop will be completed.", UserWarning)
+
+# ---------------------- Import other necessary modules ------------------ #
+
 import os
 import sys
 sys.path.append('/usr/share/qgis/python/plugins')
@@ -12,20 +47,16 @@ import numpy as np
 
 # ---------------------- Define "Global" variables, functions ----------- #
 
-# Temporary settings, for developing the script
-# want this passed in by arguments later
-# should do checks for lend > lstart, etc.
-lstart = 10000
-lend = lstart+1
-skip = 1
+lstart = args.loopstart
+lend = args.loopend
+skip = args.loopskip
 
 
 distance = 850 # metres
 wstrt = 300 # metres
 wend = 400 # metres
 
-bVerbose = True
-
+bVerbose = args.verbose
 
 # calculate linear weighting function
 def calculateWeight(pathdist):
@@ -41,48 +72,57 @@ def calculateWeight(pathdist):
         yint = -slope*wend # guaranteed point on line is (dist,weight)=(wend, 0)
         return slope*pathdist + yint
 
-def run():
 
-    qgs = QApplication([])
-    QgsApplication.setPrefixPath("usr/", True)
 
-    # Load providers
-    QgsApplication.initQgis()
+qgs = QApplication([])
+QgsApplication.setPrefixPath("usr/", True)
 
-    Processing.initialize()
-    # Quick loop to check for all available qgis algorithms
-    #for alg in QgsApplication.processingRegistry().algorithms():
-    #    print(f"{alg.id()} --> {alg.displayName()}")
-    
-    # ---------------------- Load data ---------------------------------- #
+# Load providers
+QgsApplication.initQgis()
 
-    # Made a new .gpkg for the roads network by booting QGIS from the
-    # command line, then loading & saving the roads network there.
-    input_gpkg_roads = "./calc_input_roads.gpkg"
-    input_shapefiledir = "./shapefiles/"
+Processing.initialize()
+# Quick loop to check for all available qgis algorithms
+#for alg in QgsApplication.processingRegistry().algorithms():
+#    print(f"{alg.id()} --> {alg.displayName()}")
 
-    # blyr.shp holds the polygons for the buildings
-    blyr = QgsVectorLayer(input_shapefiledir+"blyr.shp", "ogr")
-    # slyr.shp holds the "aggregated stops" point output by GTFS-GO
-    slyr = QgsVectorLayer(input_shapefiledir+"slyr.shp", "ogr")
-    rlyr = QgsVectorLayer(input_gpkg_roads+"|layername=roads_network", "ogr")
-    # Check we loaded okay.
-    if not blyr.isValid():
-        print("Building layer failed to load.")
-    if not slyr.isValid():
-        print("Stops layer failed to load.")
-    if not rlyr.isValid():
-        print("Roads layer failed to load.")
+# ---------------------- Load data ---------------------------------- #
 
-    # sort appears necessary here: layer fids appear to randomized every
-    # time the layer is loaded, i.e., everytime the script is run. I need
-    # each value of loopcount to correspond to the same building, every time
-    allfids = np.sort(blyr.allFeatureIds())
-    print("num buildings:", len(allfids)) 
+# Made a new .gpkg for the roads network by booting QGIS from the
+# command line, then loading & saving the roads network there.
+input_gpkg_roads = "./calc_input_roads.gpkg"
+input_shapefiledir = "./shapefiles/"
+
+# blyr.shp holds the polygons for the buildings
+blyr = QgsVectorLayer(input_shapefiledir+"blyr.shp", "ogr")
+# slyr.shp holds the "aggregated stops" point output by GTFS-GO
+slyr = QgsVectorLayer(input_shapefiledir+"slyr.shp", "ogr")
+rlyr = QgsVectorLayer(input_gpkg_roads+"|layername=roads_network", "ogr")
+# Check we loaded okay.
+if not blyr.isValid():
+    print("Building layer failed to load.")
+if not slyr.isValid():
+    print("Stops layer failed to load.")
+if not rlyr.isValid():
+    print("Roads layer failed to load.")
+
+# sort appears necessary here: layer fids appear to randomized every
+# time the layer is loaded, i.e., everytime the script is run. I need
+# each value of loopcount to correspond to the same building, every time
+allfids = np.sort(blyr.allFeatureIds())
+if args.loopend > len(allfids):
+    raise SystemExit("loopend out of range for number of buildings"
+            " in the input layer.")
+if args.loopstart > len(allfids):
+    raise SystemExit("loopstart out of range for number of buildings"
+            " in the input layer.")
+
+print("num buildings:", len(allfids), "\n") 
+CRS_str = blyr.crs().authid()
+
+if(bVerbose):
     print("num stops:", len(slyr.allFeatureIds()))
     print("num road network features:", len(rlyr.allFeatureIds()))
 
-    CRS_str = blyr.crs().authid()
     print("CRS:", CRS_str)
     print()
 
@@ -90,145 +130,150 @@ def run():
     print("Ending index:", lend)
     print("Skip:", skip, "\n")
 
-    # ---------------------- Define parameters -------------------------- #
+# ---------------------- Define parameters -------------------------- #
 
-    loopcount = lstart
-    while(loopcount < lend):
-        fid = allfids[loopcount]
-        print("On loop "+str(int((loopcount-lstart)/skip+1))+\
-                " of "+str(int((lend-lstart)/skip)))
-        print("Loop fid:", fid)
-        iterator = blyr.getFeatures(QgsFeatureRequest().setFilterFid(fid))
-        feature = next(iterator)
-        # Currently need to calculate these and 
-        # add to the layer outside of the script
-        x_ctr = feature['Centroid_X'] # Fetches x-y co-ordinates of feature
-        y_ctr = feature['Centroid_Y']
+loopcount = lstart
+while(loopcount <= lend):
+    fid = allfids[loopcount]
+    print("On loop "+str(int((loopcount-lstart)/skip+1))+\
+            " of "+str(int((lend-lstart)/skip+1)))
+    if bVerbose: print("Loop fid:", fid)
 
-        #print(feature.fields().names())
-        print('OBJECTID:', feature['OBJECTID'])
+    iterator = blyr.getFeatures(QgsFeatureRequest().setFilterFid(fid))
+    feature = next(iterator)
+    # Currently need to calculate these and 
+    # add to the layer outside of the script
+    x_ctr = feature['Centroid_X'] # Fetches x-y co-ordinates of feature
+    y_ctr = feature['Centroid_Y']
 
-        # Create string for x-y co-ordinates which is necessary for the
-        # Network Analysis algorithm
-        coord_str = str(x_ctr)+','+str(y_ctr)+' ['+CRS_str+']'
-        print(coord_str)
-        
-        
-        # Create a layer of just this feature as input to extract distance
-        layer_type_str = "Polygon"
-        uri = f"{layer_type_str}?crs={CRS_str}"
-        layer_name = "Single Feature Layer"
-        memory_layer = QgsVectorLayer(uri, layer_name, "memory")
-        
-        # Add fields from the feature to the new layer
-        memory_layer.startEditing()
-        memory_layer.dataProvider().addAttributes(feature.fields())
-        memory_layer.updateFields()
-        memory_layer.commitChanges()
+    #print(feature.fields().names())
+    print('OBJECTID:', feature['OBJECTID'])
 
-        # Add the feature to the memory layer
-        memory_layer.startEditing()
-        memory_layer.dataProvider().addFeatures([feature])
-        memory_layer.commitChanges()
+    # Create string for x-y co-ordinates which is necessary for the
+    # Network Analysis algorithm
+    coord_str = str(x_ctr)+','+str(y_ctr)+' ['+CRS_str+']'
+    if bVerbose: print("coord_str", coord_str)
+    
+    
+    # Create a layer of just this feature as input to extract distance
+    layer_type_str = "Polygon"
+    uri = f"{layer_type_str}?crs={CRS_str}"
+    memory_layer = QgsVectorLayer(uri, "Single Feature Layer", "memory")
 
-        '''
-        # Some prints for confirming input to extract algorithm is correct
-        print(memory_layer.fields().names())
-        print(memory_layer.allFeatureIds())
-        print(distance)
-        print(slyr.fields().names())
-        print(len(slyr.allFeatureIds()))
-        print(distance)
-        '''
+    # Add fields & feature to the new layer
+    memory_layer.startEditing()
+    memory_layer.dataProvider().addAttributes(feature.fields())
+    memory_layer.updateFields()
+    memory_layer.dataProvider().addFeatures([feature])
+    memory_layer.commitChanges()
 
-        # Extract the transit stops which are near to the current building
-        extractwd_result = processing.run(
-            'native:extractwithindistance',
-            {
-                # INPUT is destination (i.e. transit stops)
-                # REFERENCE is the current building, stored in memory layer
-                'INPUT': slyr,
-                'REFERENCE': memory_layer, #parameters['INPUT_SP'],
-                'DISTANCE': distance,
-                'OUTPUT': 'TEMP_OUTPUT'
-            },
-            feedback=QgsProcessingFeedback())
 
-        '''
-        # Some prints for debugging the extract within distance output 
-        print("Extracted stops prints:")
-        print(extractwd_result)
-        exlyr = QgsVectorLayer(
-                "TEMP_OUTPUT.gpkg|layername=TEMP_OUTPUT", "ogr")
-        print(exlyr.fields().names())
-        print(len(exlyr.allFeatureIds()))
-        '''
+    '''
+    # Some prints for confirming input to extract algorithm is correct
+    print(memory_layer.fields().names())
+    print(memory_layer.allFeatureIds())
+    print(distance)
+    print(slyr.fields().names())
+    print(len(slyr.allFeatureIds()))
+    print(distance)
+    '''
 
-        # Run the Network Analysis algorithm, calculating shortest distance
-        # from each starting point to each destination point within distance
-        nwshort_result = processing.run(
-            "native:shortestpathpointtolayer",
-            {
-                'INPUT': rlyr,
-                'STRATEGY':0,
-                'DIRECTION_FIELD':'',
-                'VALUE_FORWARD':'',
-                'VALUE_BACKWARD':'',
-                'VALUE_BOTH':'',
-                'DEFAULT_DIRECTION':2,
-                'SPEED_FIELD':'',
-                'DEFAULT_SPEED':50,
-                'TOLERANCE':0,
-                'START_POINT':coord_str,
-                'END_POINTS':extractwd_result['OUTPUT'],
-                'POINT_TOLERANCE':None,
-                'OUTPUT': 'TEMP_OUTPUT2'
-            },                
-            feedback=QgsProcessingFeedback())
- 
-        nwlyr = QgsVectorLayer(\
-                "TEMP_OUTPUT2.gpkg|layername=TEMP_OUTPUT2",
-                providerLib="ogr")
+    # Extract the transit stops which are near to the current building
+    exout_str = "TEMP_EX_"+'{0:05}'.format(lstart)
+    extractwd_result = processing.run(
+        'native:extractwithindistance',
+        {
+            # INPUT is destination (i.e. transit stops)
+            # REFERENCE is the current building, stored in memory layer
+            'INPUT': slyr,
+            'REFERENCE': memory_layer,
+            'DISTANCE': distance,
+            'OUTPUT': exout_str
+        },
+        feedback=QgsProcessingFeedback())
 
-        '''
-        # Some prints for debuggin the shortest path output
-        print("Shortest path prints:")
-        #vlayer_nw = context.getMapLayer(nwshort_result['OUTPUT'])
-        print(nwlyr.fields().names())
-        print(len(nwlyr.allFeatureIds()))
-        '''
+    '''
+    # Some prints for debugging the extract within distance output 
+    print("Extracted stops prints:")
+    print(extractwd_result)
+    exlyr = QgsVectorLayer(
+            "TEMP_OUTPUT.gpkg|layername=TEMP_OUTPUT", "ogr")
+    print(exlyr.fields().names())
+    print(len(exlyr.allFeatureIds()))
+    '''
 
+    # Run the Network Analysis algorithm, calculating shortest distance
+    # from each starting point to each destination point within distance
+    nwout_str = "TEMP_NW_"+'{0:05}'.format(lstart)
+    nwshort_result = processing.run(
+        "native:shortestpathpointtolayer",
+        {
+            'INPUT': rlyr,
+            'STRATEGY':0,
+            'DIRECTION_FIELD':'',
+            'VALUE_FORWARD':'',
+            'VALUE_BACKWARD':'',
+            'VALUE_BOTH':'',
+            'DEFAULT_DIRECTION':2,
+            'SPEED_FIELD':'',
+            'DEFAULT_SPEED':50,
+            'TOLERANCE':0,
+            'START_POINT':coord_str,
+            'END_POINTS':extractwd_result['OUTPUT'],
+            'POINT_TOLERANCE':None,
+            'OUTPUT': nwout_str
+        },                
+        feedback=QgsProcessingFeedback())
+
+    nwlyr = QgsVectorLayer(\
+            nwout_str+".gpkg|layername="+nwout_str,
+            providerLib="ogr")
+
+    '''
+    # Some prints for debuggin the shortest path output
+    print("Shortest path prints:")
+    #vlayer_nw = context.getMapLayer(nwshort_result['OUTPUT'])
+    print(nwlyr.fields().names())
+    print(len(nwlyr.allFeatureIds()))
+    '''
+
+    if bVerbose:
         print("Num. found destinations", len(nwlyr.allFeatureIds()))
 
-        # loop through all features in starting point layer
-        features_nw = nwlyr.getFeatures()
-        sum = 0
-        for feature_nw in features_nw:
-            count = feature_nw['count']
-            nwdist = feature_nw['cost']
-            stopid = feature_nw['similar__1']
+    # loop through all features in starting point layer
+    features_nw = nwlyr.getFeatures()
+    sum = 0
+    for feature_nw in features_nw:
+        count = feature_nw['count']
+        nwdist = feature_nw['cost']
+        stopid = feature_nw['similar__1']
 
-            # sometimes you get NULL from shortest path calculation
-            if( isinstance(count, int) and isinstance(nwdist, float)):                
-                weight = calculateWeight(nwdist)
-                # print(stopid, count, nwdist, weight)
-                sum += count*weight
-            else:
-                sum += 0
-        print("Weightest cost sum:", sum)
-        print()
-        loopcount += skip
-        del(nwlyr)
-        #del(exlyr) # Necessary if new layer was created for debugging
-
-    # ---------------------- Clean up & close QGIS  --------------------- #
-    del(blyr)
-    del(slyr)
-    del(rlyr)
-    QgsApplication.exitQgis()
+        # sometimes you get NULL from shortest path calculation
+        if( isinstance(count, int) and isinstance(nwdist, float)):                
+            weight = calculateWeight(nwdist)
+            if bVerbose: print(stopid, count, nwdist, weight)
+            sum += count*weight
+        else:
+            sum += 0
+    print("Weightest cost sum:", sum)
+    print()
+    loopcount += skip
+    del(nwlyr)
+    #del(exlyr) # Necessary if new layer was created for debugging
 
 
-# Hope is to be able to do this calculation in parallel, so I'm starting
-# by wrapping everything in one routine.
-run()
+# ---------------------- Clean up & close QGIS  --------------------- #
+del(blyr)
+del(slyr)
+del(rlyr)
+QgsApplication.exitQgis()
 
+import glob
+for temp_gpkg_str in [nwout_str, exout_str]:
+    file_glob = glob.glob('./'+temp_gpkg_str+".gpkg*")
+    for file_path in file_glob:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"File '{file_path}' deleted successfully.")
+        else:
+            print(f"File '{file_path}' does not exist.")
