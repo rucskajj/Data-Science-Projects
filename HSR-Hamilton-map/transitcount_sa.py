@@ -16,11 +16,11 @@ import numpy as np
 # want this passed in by arguments later
 # should do checks for lend > lstart, etc.
 lstart = 10000
-lend = 20000
-skip = 1000
+lend = lstart+1
+skip = 1
 
 
-distance = 400 # metres
+distance = 850 # metres
 wstrt = 300 # metres
 wend = 400 # metres
 
@@ -50,7 +50,10 @@ def run():
     QgsApplication.initQgis()
 
     Processing.initialize()
-
+    # Quick loop to check for all available qgis algorithms
+    #for alg in QgsApplication.processingRegistry().algorithms():
+    #    print(f"{alg.id()} --> {alg.displayName()}")
+    
     # ---------------------- Load data ---------------------------------- #
 
     # Made a new .gpkg for the roads network by booting QGIS from the
@@ -71,35 +74,44 @@ def run():
     if not rlyr.isValid():
         print("Roads layer failed to load.")
 
-    allfids = blyr.allFeatureIds()
+    # sort appears necessary here: layer fids appear to randomized every
+    # time the layer is loaded, i.e., everytime the script is run. I need
+    # each value of loopcount to correspond to the same building, every time
+    allfids = np.sort(blyr.allFeatureIds())
     print("num buildings:", len(allfids)) 
     print("num stops:", len(slyr.allFeatureIds()))
     print("num road network features:", len(rlyr.allFeatureIds()))
 
     CRS_str = blyr.crs().authid()
-    print("CRS", CRS_str)
+    print("CRS:", CRS_str)
     print()
+
+    print("Starting index:", lstart)
+    print("Ending index:", lend)
+    print("Skip:", skip, "\n")
 
     # ---------------------- Define parameters -------------------------- #
 
     loopcount = lstart
     while(loopcount < lend):
-        fid = allfids[loopcount] #44014
-        print("On loop "+str(int(loopcount/skip+1))+" of "+str(int((lend-lstart)/skip)))
+        fid = allfids[loopcount]
+        print("On loop "+str(int((loopcount-lstart)/skip+1))+\
+                " of "+str(int((lend-lstart)/skip)))
         print("Loop fid:", fid)
         iterator = blyr.getFeatures(QgsFeatureRequest().setFilterFid(fid))
         feature = next(iterator)
-        attrs = feature.attributes() # attributes of current feature
-        x_idx = feature.fieldNameIndex('Centroid_X') # Currently need to calculate these and add to the layer outside of the script
-        y_idx = feature.fieldNameIndex('Centroid_Y') # Currently need to calculate these outside of the script
-        x_ctr = attrs[x_idx] # Fetches the x-y co-ordinates of the centroid
-        y_ctr = attrs[y_idx]
+        # Currently need to calculate these and 
+        # add to the layer outside of the script
+        x_ctr = feature['Centroid_X'] # Fetches x-y co-ordinates of feature
+        y_ctr = feature['Centroid_Y']
 
+        #print(feature.fields().names())
+        print('OBJECTID:', feature['OBJECTID'])
 
         # Create string for x-y co-ordinates which is necessary for the
         # Network Analysis algorithm
         coord_str = str(x_ctr)+','+str(y_ctr)+' ['+CRS_str+']'
-        #print(coord_str)
+        print(coord_str)
         
         
         # Create a layer of just this feature as input to extract distance
@@ -119,6 +131,15 @@ def run():
         memory_layer.dataProvider().addFeatures([feature])
         memory_layer.commitChanges()
 
+        '''
+        # Some prints for confirming input to extract algorithm is correct
+        print(memory_layer.fields().names())
+        print(memory_layer.allFeatureIds())
+        print(distance)
+        print(slyr.fields().names())
+        print(len(slyr.allFeatureIds()))
+        print(distance)
+        '''
 
         # Extract the transit stops which are near to the current building
         extractwd_result = processing.run(
@@ -132,6 +153,16 @@ def run():
                 'OUTPUT': 'TEMP_OUTPUT'
             },
             feedback=QgsProcessingFeedback())
+
+        '''
+        # Some prints for debugging the extract within distance output 
+        print("Extracted stops prints:")
+        print(extractwd_result)
+        exlyr = QgsVectorLayer(
+                "TEMP_OUTPUT.gpkg|layername=TEMP_OUTPUT", "ogr")
+        print(exlyr.fields().names())
+        print(len(exlyr.allFeatureIds()))
+        '''
 
         # Run the Network Analysis algorithm, calculating shortest distance
         # from each starting point to each destination point within distance
@@ -154,33 +185,41 @@ def run():
                 'OUTPUT': 'TEMP_OUTPUT2'
             },                
             feedback=QgsProcessingFeedback())
-        
-        
-        vlayer_nw = QgsVectorLayer("TEMPORARY_OUTPUT2.gpkg", providerLib="memory")
-        #vlayer_nw = context.getMapLayer(nwshort_result['OUTPUT'])
-        #print(vlayer_nw)
-        
-        allfids_nw = vlayer_nw.allFeatureIds()
-        print("Num. found destinations", len(allfids_nw))
+ 
+        nwlyr = QgsVectorLayer(\
+                "TEMP_OUTPUT2.gpkg|layername=TEMP_OUTPUT2",
+                providerLib="ogr")
 
+        '''
+        # Some prints for debuggin the shortest path output
+        print("Shortest path prints:")
+        #vlayer_nw = context.getMapLayer(nwshort_result['OUTPUT'])
+        print(nwlyr.fields().names())
+        print(len(nwlyr.allFeatureIds()))
+        '''
+
+        print("Num. found destinations", len(nwlyr.allFeatureIds()))
 
         # loop through all features in starting point layer
-        features_nw = vlayer_nw.getFeatures()
+        features_nw = nwlyr.getFeatures()
         sum = 0
         for feature_nw in features_nw:
             count = feature_nw['count']
             nwdist = feature_nw['cost']
+            stopid = feature_nw['similar__1']
 
             # sometimes you get NULL from shortest path calculation
             if( isinstance(count, int) and isinstance(nwdist, float)):                
                 weight = calculateWeight(nwdist)
-                #print(count, nwdist, weight)
+                # print(stopid, count, nwdist, weight)
                 sum += count*weight
             else:
                 sum += 0
         print("Weightest cost sum:", sum)
         print()
         loopcount += skip
+        del(nwlyr)
+        #del(exlyr) # Necessary if new layer was created for debugging
 
     # ---------------------- Clean up & close QGIS  --------------------- #
     del(blyr)
