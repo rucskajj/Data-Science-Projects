@@ -74,7 +74,15 @@ import numpy as np
 # weighting function should begin and end the sloped part
 # Notes: - units are metres
 #        - need to have weight_end > weight_start
-weight_tuples = [ [300, 400], [400,400] ]
+weight_tuples = [ [200, 400], 
+        [300,400],
+        [400,400],
+        [300,600],
+        [400,600],
+        [600,600],
+        [400,800],
+        [600,800],
+        [800,800]]
 
 # calculate linear weighting function
 def calculateWeight(pathdist, ws, we):
@@ -155,6 +163,17 @@ if(bVerbose):
 
     print("CRS:", CRS_str)
     print()
+
+# ---------------------- Set up output file ---------------------------- #
+
+outfile_str = "transit_counts_"+'{0:05}'.format(lstart)+".csv"
+if os.path.exists(outfile_str):
+    os.remove(outfile_str)
+
+#import csv
+#outfile = open(outfile_str, "a", newline='')
+#csv_writer = csv.writer(outfile,delimiter=',',
+#        quotechar="|", quoting=csv.QUOTE_MINIMAL)
 
 # ---------------------- Main calculation loop ------------------------ #
 
@@ -271,9 +290,6 @@ while(loopcount <= lend): # Loop over all buildings set by input indices
     features_nw = nwlyr.getFeatures()
     sums = np.zeros((len(weight_tuples)))
     
-    # a list for this building's output data
-    output_line = [feature['OBJECTID']]
-
     for feature_nw in features_nw:
         count = feature_nw['count']
         nwdist = feature_nw['cost']
@@ -292,17 +308,37 @@ while(loopcount <= lend): # Loop over all buildings set by input indices
                 sums[wti] += count*weight # transit_count=sum(count*weight)
             else:
                 sums[wti] += 0 # add zero if shortest path returned NULL
-    
-    for wti in range(len(weight_tuples)):
-        output_line.append(sums[wti]) # add tc to output
+ 
+
+
+    # Output this building's data to file
+    output_line = []
+    output_line.append(str(loopcount) + ",")
+    output_line.append(str(feature['OBJECTID']) + ",")
+    for wti in range(len(weight_tuples)-1):
+        output_line.append(str(sums[wti]) + ",") # add tc to output
+    output_line.append(str(sums[len(weight_tuples)-1])+"\n")
+    with open(outfile_str, "a", newline='') as f:
+        f.writelines(output_line)
 
     print("Weightest cost sums:", sums)
     print()
     loopcount += skip
     del(nwlyr)
+    del(feat_layer)
     #del(exlyr) # Necessary if new layer was created for debugging
 
-    output_data.append(output_line) # add this building to global output
+    # Remove temporary files
+    import glob
+    for temp_gpkg_str in [nwout_str, exout_str]:
+        file_glob = glob.glob('./'+temp_gpkg_str+".gpkg*")
+        for file_path in file_glob:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                if bVerbose:
+                    print(f"File '{file_path}' deleted successfully.")
+            else:
+                print(f"File '{file_path}' does not exist.")
 
 
 # ---------------------- Clean up & close QGIS  ----------------------- #
@@ -313,27 +349,4 @@ del(slyr)
 del(rlyr)
 QgsApplication.exitQgis()
 
-import glob
-for temp_gpkg_str in [nwout_str, exout_str]:
-    file_glob = glob.glob('./'+temp_gpkg_str+".gpkg*")
-    for file_path in file_glob:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            print(f"File '{file_path}' deleted successfully.")
-        else:
-            print(f"File '{file_path}' does not exist.")
-
-
-# ---------------------- Output data to file --------------------------- #
-
-outfile_str = "transit_counts_"+'{0:05}'.format(lstart)+".csv"
-if os.path.exists(outfile_str):
-    os.remove(outfile_str)
-
-import csv
-with open(outfile_str, "a", newline='') as f:
-    csv_writer = csv.writer(f,delimiter=',',
-            quotechar="|", quoting=csv.QUOTE_MINIMAL)
-    for line in output_data:
-        csv_writer.writerow(line)
 
