@@ -312,6 +312,8 @@ while(loopcount <= lend): # Loop over all buildings set by input indices
 
 
     # Output this building's data to file
+    # I do this mid-loop because the script closes after ~2500 loops,
+    # see comments below.
     output_line = []
     output_line.append(str(loopcount) + ",")
     output_line.append(str(feature['OBJECTID']) + ",")
@@ -321,14 +323,19 @@ while(loopcount <= lend): # Loop over all buildings set by input indices
     with open(outfile_str, "a", newline='') as f:
         f.writelines(output_line)
 
-    print("Weightest cost sums:", sums)
+    print("Weight-cost sums:", sums)
     print()
     loopcount += skip
     del(nwlyr)
     del(feat_layer)
     #del(exlyr) # Necessary if new layer was created for debugging
 
-    # Remove temporary files
+    # Remove temporary files, can probably do this outside the loop.
+    # I ran into an issue with this script creating too many
+    # temporary files, causing the calculation to end after ~2500 loops.
+    # I could not track down a way to delete these files mid-loop.
+    # QGIS clearly creates temporary files somewhere, and deletes them
+    # when the script fails or exitQgs() is called.
     import glob
     for temp_gpkg_str in [nwout_str, exout_str]:
         file_glob = glob.glob('./'+temp_gpkg_str+".gpkg*")

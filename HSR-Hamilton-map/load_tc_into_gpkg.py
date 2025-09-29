@@ -35,9 +35,6 @@ blyr = QgsVectorLayer(building_layer_str, "ogr")
 if not blyr.isValid():
     raise SystemExit("Building layer failed to load.")
 
-# sort appears necessary here: layer fids appear to randomized every
-# time the layer is loaded, i.e., everytime the script is run. I need
-# each value of loopcount to correspond to the same building, every time
 allfids = np.sort(blyr.allFeatureIds())
 
 # Do some initial prints
@@ -60,11 +57,7 @@ with open("./all_csvs.csv", newline='') as csvfile:
     rowcount = 0
     for row in reader:
         for key in colnames:
-            #if (key == 'loopcount' or key == 'OBJECTID'): # ints
-            #    # int(float(num)) necessary here; to convert "0.0" -> 0
             calc_data[key].append(int(np.round(float(row[key]))))
-            #else: # doubles
-            #    calc_data[key].append(float(row[key]))
 
         # Used this code to confirm correct the correct way to access data
         # from the loaded dictionary, by OBJECTID
@@ -139,18 +132,26 @@ while(loopcount < len(np.unique(calc_data['OBJECTID']))):
     iterator = blyr.getFeatures(QgsFeatureRequest().setFilterFid(fid))
     feature = next(iterator)
 
-    f_OBID = feature['OBJECTID'] # Fetches OBJECTID
+    # Fetches this feature's OBJECTID
+    f_OBID = feature['OBJECTID'] 
+    # Grab the index in calc_data dictionary which matches this
+    # feature's OBJECTID
+    # OBJECTID is an indentifier provided by the original dataset
+    # from the City of Hamilton. It's unique to each building/feature
     OBID_idx = np.where(calc_data_OBID_arr == f_OBID)[0][0]
 
     for tcname in tcnames:
         #print(f_OBID, calc_data[tcname][OBID_idx])
         feature.setAttribute(tcname, calc_data[tcname][OBID_idx])
-    blyr.updateFeature(feature)
+
+    # This adds the transit_count values to the feature 
+    blyr.updateFeature(feature) 
     loopcount += 1
 
 if blyr.isEditable():
     blyr.commitChanges()
 
+# ---------------------- Output data  -------------------------------- #
 
 outfile = "./outputdata/buildings_with_tc.gpkg"
 layer_output_name = "buildings_with_tc"
