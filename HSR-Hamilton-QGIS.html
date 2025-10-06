@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Joey Rucska - Data Science Projects</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+        }
+
+        /* Style the header */
+        .header {
+            padding: 40px;
+            text-align: center;
+            background: #00578d;
+            color: white;
+            border-bottom: solid black
+        }
+
+            /* Increase the font size of the h1 element */
+            .header h1 {
+                font-size: 34px;
+            }
+
+            /* Set the font size of the p element */
+            .header p {
+                font-size: 20px;
+            }
+
+            /* Set the link colours */
+            /* unvisited */
+           .header a:link{
+                color: yellow;
+            }
+           .header a:visited{
+                color: black;
+            }
+           .header a:hover{
+                color: yellow;
+            }
+
+        /* Main column */
+        .main {
+            flex: 70%; /* Set the width of the main content */
+            background-color: white; /* White background color */
+            padding-top: 40px;
+            padding-left: 25%;
+            padding-right: 25%;
+            line-height: 1.5;
+        }
+
+            /* Increase the font size of the h1 element */
+            .main h1 {
+                padding-top: 16px;
+                font-size: 16px;
+                font-weight: bold;
+                text-decoration: underline;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Description for a Map of Public Transit Accessibility in Hamilton, ON</h1>
+        <p style="font-size:28px "><a href="https://qgiscloud.com/rucskajj/HSR_transit_accessibility_truncated7_cloud/">Link to map</a></b></p>
+        <p>Joey Rucska</p>
+        <p>Last updated on September 29, 2025.</p>
+    </div>
+
+    <div class="main">
+        The goal of this project is to map the accessibility of the public transit network in Hamilton, ON, in terms of walkability. A map produced using QGIS is available through this <a href="https://qgiscloud.com/rucskajj/building_transit_map-1-truncated-cloud/">link</a></b>. Over 50,000 buildings are individually analyzed. The colour of each building tracks the frequency that buses arrive at bus stops within walking distance&mdash;bright yellow is high frequency, dark blue/purple is low frequency. I refer to this quantity as the <b>"transit count"</b>, and describe how it is calculated in more detail below.
+        <br><br>
+        This map is useful to anyone interested in a quantitative, high-resolution measurement of how well a given area of the city is connected to the transit system. The techniques used give a "spatial resolution" of 100 metres or less.
+        <br><br>
+        Some tips for interpreting, viewing, and navigating the map:
+        <ul>
+            <li>The numerical <b>"transit count"</b> value for each building is visible at a scale of 1:1000 and below. The street names & names of the bus stops will render at 1:2000 and below.</li>
+            <li>Viewing the map without the "HSR_transit" layer rendered makes the distribution of the <b>transit count</b> quantity more apparent.</li>
+            <li>Specific streets, neighbourhoods, and addresses can be located using the search bar at the top.</li>
+        </ul>
+        The Python code used for this analysis is available on my <a href="https://github.com/rucskajj/Data-Science-Projects">GitHub</a>.
+
+        <h1>Data & Methods</h1>
+        The three input data sets come from Open Street Map (road network), the City of Hamilton's building footprint data, and the GTFS repository for the Hamilton Street Railway (HSR). The HSR is a bus-only transit network. The data used here applies to the schedule on September 5, 2025.
+        <br><br>
+        The <b>"transit count"</b> number is calculated as follows:
+        <ul>
+           <li>Using the QGIS GTFS-GO plugin, the <b>number of buses</b> arriving at each HSR bus stop over the course of the selected 24-hour period is calculated.</li>
+           <li>For individual, randomly selected buildings, the bus stops within a 800 metre radius are identified. (See "improvements" below for a discussion on why buildings were randomly selected.)</li>
+           <li>Using the native Network Analysis algorithm in QGIS, the shortest walking distance from each building to all nearby bus stops is calculated.</li>
+           <li>For each of the nearby stops, a <b>weight</b> is assigned, according to walking distance: stops within 400 m recieve a weight of 1, stops beyond 800 m recieve a weight of zero, and stops between 400 m and 800 m recieve a weight between 1 and 0 that decreases linearly with distance.</li>
+           <li>The total <b>transit count</b> for each building is calculated as a sum of <b>weight</b> multpilied by the <b>number of bus "arrivals"</b> for all nearby bus stops. (This number is rounded to the nearest integer for display on the map.)</li>
+        </ul>
+
+        <h1>Results & Insights:</h1>
+        <ul>
+           <li>A typical transit system map (including <a href="https://www.hamilton.ca/sites/default/files/2024-12/hsr-system-map-2025.pdf">HSR's own</a>) communicates the paths of the routes, but not their frequency. The map from this analysis immediately shows that Route 2 on Barton St. E is approximately 50% more frequent as Route 3 on Cannon/Wilson St. E, for example.</li>
+           <li>The historic Durand neighbourhood contains a number of high-rise apartment buildings. The buildings along Caroline street are relatively much less connected to transit than the MacNab St. S and James St. S builings (some of which are within walking distance of the Hunter St. GO centre transit hub).</li>
+           <li>Newly built condo buildings in the downtown block bounded by King St. E, James St. N, Wilson St and Catherine St. N are very well connected to buses.</li>
+           <li>Transit accessibility in the Hamilton Mountain area (southern part of the map) varies widely (this is obvious from even a brief look at the HSR system map, but my analysis offers a quantitative, spatial measurement). Well connected areas are: Mohawk College, Concession St, and the vicinity of major intersections (e.g Mohawk Rd. &amp; Upper James St). Within a given "block" in this part of the city, homes in the interior of the blocks are particularly not well connected. This is especially true for the blocks which are closest to the Lincoln Alexander Parkway. Blocks which have a more gridded street layout have more intersections, which increases the walkability of the area when compared to street layouts with cul-de-sacs, dead-ends, and long, uninterupted streets.</li>
+           <li>The Ainslie Wood and Westdale neighbourhoods, being close to McMaster University, are popular choices for students looking for accomodations. These neighbourhoods are serviced by multiple bus routes, but only along specific corridors. Thus, as expected, walkable access to transit here is quite uneven, and this analysis reveals just how stark that disparity is. The homes in Northern Westdale, and southern & Eastern Ainslie Wood are towards the lower end of the colorbar scale, while the homes near Emerson & Main and the King Street West strip are among the best connected buildings in the city.</li>
+           <li>I have explored multiple choices for the main three numerical parameters: the search radius, the walking distance where the weighting function begins to decrease, and the walking distance where the weighting function reaches zero. The choices for the presented map (800 m, 400 m, 800 m, respectively) best demonstrat local variations in the <b>transit count</b> parameter, in my opinion. A distance of 800 m is approximately a 10-minute walk. Of course, the conclusions above depend on choices of these parameters, which reflect individual perferences in what constitutes a comfortable walking distance.</li>
+        </ul>
+
+        <h1>Future improvements:</h1> 
+        <ul>
+            <li>Obviously, it would be better to complete this calculation for all of the houses in the map. The current random sampling is driven by 1) long calculation times in the network analysis step, and 2) data size limits in the free QGIS Cloud service. I've had to delete a lot of the unsampled buildings in the outskirts of the city to come in under the 50 MB QGIS Cloud data limit, which reduces the aesthetic quality of the map. It would be worth exploring alternative publishing options.</li>
+            <li>For unknown reasons, there are examples of erroneous calculations for (thankfully) a small number of buildings. For example, 3 buildings along Westwood Avenue between Dalewood & Stroud report a <b>transit count</b> of zero while their neighbour across the street has a value of 1175. At a glance, the occurence rate seems small (perhaps less than 1 in 1,000), and since I am not interested in aggregate statistics like average or variance, for now, I am not concerned. Should the need arise, a manual invesitigation of these errors would be necessary.</li>
+            <li>Currently, bus arrivals at adjacent stops on the same route are equally counted in this calculation. For instance, if three bus stops on Route 4 are within 400 m of one house, a single #4 bus arriving at all three stops adds a total of 3 to that building's <b>transit count</b>. For my objective with this map&mdash;to track the number of bus arrivals within walking distance&mdash;this sample scenario should only add 1 to <b>transit count</b>. An additional step in the calculation is required, to identify <i>unique</i> bus arrivals rather than total arrivals. The current numbers over emphasize the density of nearby stops.</li>
+        </ul>
+        <br> <br>
+    </div>
+
+</body>
+</html>
+
