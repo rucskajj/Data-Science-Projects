@@ -16,7 +16,7 @@
 
         /* Style the header */
         .header {
-            padding: 40px;
+            padding: 30px 40px 10px;
             text-align: center;
             background: #d44137;
             color: white;
@@ -38,27 +38,133 @@
         .main {
             flex: 70%; /* Set the width of the main content */
             background-color: white; /* White background color */
-            padding-top: 40px;
-            padding-left: 25%;
-            padding-right: 25%;
+            font-size: 14pt;
+            padding-top: 1em;
+            padding-left: 20%;
+            padding-right: 20%;
+            padding-bottom: 7em;
             line-height: 1.5;
+        }
+
+            /* Add some style for the .main h1 element */
+            .main h1 {
+                padding-top: 10px;
+                padding-bottom: 10px;
+                font-size: 1.2em;
+                font-weight: bold;
+                text-decoration: underline;
+            }
+
+            /* Add some style for the .main h2 element */
+            .main h2 {
+                font-size: 1.2em;
+                font-weight: normal;
+                margin-block-end: 0.3em;
+                margin-block-start: 1.0em;
+            }
+
+            /* Add some style for the ul element */
+            .main ul {
+                margin-block-start: 10px;
+                margin-block-end: 10px;
+            }
+        
+        /* Create two equal columns that floats next to each other */
+        .column-left {
+        float: left;
+        width: 40%;
+        padding: 10px;
+        }
+        /* Create two equal columns that floats next to each other */
+        .column-right {
+        float: left;
+        width: 60%;
+        padding: 10px 30px;
+        }
+
+        /* Create two equal columns that floats next to each other */
+        .row {
+            padding-top: 0px;
+            padding-bottom: 10px;
+            padding-right: 0px;
+            padding-left: 0px;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+        content: "";
+        display: table;
+        clear: both;
+        }
+
+        /* Responsive layout - makes the two columns stack on top of each other instead of next to each other */
+        @media screen and (max-width: 1000px) {
+        .column-left {
+            width: 100%;
+        }
+        .column-right {
+            width: 100%;
+            padding: 10px 10px;
+        }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
+        <h1>Data Science & Research Projects Portfolio</h1>
         <h1>Joey Rucska</h1>
-        <p>Public data science projects directory</p>
+        <p>Code available on my <a href="https://github.com/rucskajj/Data-Science-Projects">Github</a>.</p>
     </div>
 
     <div class="main">
-        Links to summaries:
-        <ul>
-            <li><a href="/Data-Science-Projects/US_Wildfires/index.html">U.S.A. Wildfires from 1992-2020</a> </li>
-            <li>Map of transit accessibility in Hamilton: <a href="/Data-Science-Projects/HSR-Hamilton-QGIS.html">QGIS</a>, <a href="https://arcg.is/0Ca8qu0">ArcGIS</a> </li>
-        </ul>
-        Applicable code is available on my <a href="https://github.com/rucskajj/Data-Science-Projects">Github</a>.
+        <h1>Personal Data Science/Research Projects</h1>
+
+        <h2><a href="https://arcg.is/0Ca8qu0">Map of transit accessibility in Hamilton, Ontario</a></h2>
+        <div class="row">
+            <div class="column-left">
+                <a href="https://arcg.is/0Ca8qu0"><img src="/images/snap_HSR.png" alt="An map of the distribution transit accessibility in Hamilton." style="float:left;width:100%"></a>
+            </div>
+            <div class="column-right">
+                A map of walkable accessibility for the Hamilton Street Railway (HSR) public transit network. For over 60,000 buildings in the city, the number of buses arriving with walking distance is calculated, achieving a "spatial resolution" of < 100 metres in this metric along the entirety of the HSR network.
+                <br><br>
+                The calculations are based on QGIS algorithms, and the final map was made in ArcGIS Pro.
+
+                A similar <a href="/Data-Science-Projects/HSR-Hamilton-QGIS.html">analysis</a> based on a <a href="https://qgiscloud.com/rucskajj/HSR_transit_accessibility_truncated7_cloud/">QGIS webmap</a> is also available.
+            </div>
+        </div>
+        <h2><a href="/Data-Science-Projects/US_Wildfires/index.html">The increase in U.S.A. wildfire activity from 1992-2020</a></h2>
+        <div class="row">
+            <div class="column-left">
+                <a href="/Data-Science-Projects/US_Wildfires/index.html"><img src="/images/snap_USWildfires.png" alt="An image of the distribution of wildfires in the lower 48 states in the U.S.A." style="float:left;width:100%"></a>
+            </div>
+            <div class="column-right">
+                An investigation of wildfire activity in the U.S.A based on a public dataset of 2.3 million wildfires. Using standard statistical techniques, a cyclical, slowly increasing trend in wildfire activity overtime is quantified. The spatial distribution of wildfires is also explored, identifying the most heavily affected areas.
+            </div>
+        </div>
+
+        <h1>Ph.D. Research Projects</h1>
+
+        <h2><a href="https://academic.oup.com/mnras/article/526/2/1757/7277578?login=false">The effects of grain size distribution on asteroid formation</a> (<a href="https://arxiv.org/abs/2305.11297">pre-print</a>)</h2>
+        <div class="row">
+            <div class="column-left">
+                <a href="https://academic.oup.com/mnras/article/526/2/1757/7277578?login=false"><img src="/images/snap_paperII.png" alt="An image of the distribution of wildfires in the lower 48 states in the U.S.A." style="float:left;width:100%"></a>
+            </div>
+            <div class="column-right">
+                An investigation which models a distribution of dust grain sizes during the formation of asteroids via the streaming instability (SI, see "varaibility" project below). In nature, asteroids are believed to form directly from solid material similar in size (and to a lesser extent, chemical composition) to grains of sand on Earth. This work is the first to model a realistic distribution of grain sizes in 3D simulations, and demonstrates that only grains within a narrow range of sizes participate strongly in asteroid formation.
+            </div>
+        </div>
+
+        <h2><a href="https://academic.oup.com/mnras/article/500/1/520/5937490?login=false">Variability in the streaming instability (SI)</a> (<a href="https://arxiv.org/abs/2010.15077">pre-print</a>)</h2>
+        <div class="row">
+            <div class="column-left">
+                <a href="https://academic.oup.com/mnras/article/500/1/520/5937490?login=false"><img src="/images/snap_paperI.png" alt="An map of the distribution transit accessibility in Hamilton." style="float:left;width:100%"></a>
+            </div>
+            <div class="column-right">
+                An investigation of the variability in a well-studied phenomonon known as the streaming instability (SI), which is believed to contribute substantially to the formation of asteroid-sized objects in young (< 10 Myr), actively-forming solar systems&mdash;i.e. protoplanetary disks. This work presents novel variations on literature-standard simulations which highlight and quantify the instrinsic variability present in this highly non-linear process.
+            </div>
+        </div>
+
     </div>
 
 </body>
