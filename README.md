@@ -2,4 +2,5 @@
 Collection of assorted data science projects/analyses.
 
 Projects include:
-* [U.S.A Wildfires](https://github.com/rucskajj/Data-Science-Projects/tree/main/USWildfires00-20) from 1992-2020. 
+* [U.S.A Wildfires](https://github.com/rucskajj/Data-Science-Projects/tree/main/USWildfires00-20) from 1992-2020.
+* [Public Transit Accessibility in Hamilton, ON](https://github.com/rucskajj/Data-Science-Projects/tree/main/HSR-Hamilton-map).
