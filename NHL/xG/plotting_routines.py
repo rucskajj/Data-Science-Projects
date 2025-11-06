@@ -5,17 +5,32 @@ import numpy as np
 #def add_angle_lines(ax, angles):
 #    angles *= np.pi/180
 
-def plot_event_histogram(hist, xedges, yedges, title, iPlot):
+def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot):
     '''
     Formats the 2D histogram plots.
     '''
 
+    if(iPlot == 0): # Plotting a value that is not a difference
+        cmap = 'Greys'
+        max_val = np.max(hist[~np.isnan(hist)])
+        min_val = np.min(hist[~np.isnan(hist)])
+    if(iPlot == 1): # Plotting a value that is not a difference
+        cmap = 'bwr'
+        mostpos = np.max(hist[~np.isnan(hist)])
+        mostneg = np.min(hist[~np.isnan(hist)])
+        max_val =  np.max( [np.abs(mostpos), np.abs(mostneg)] )
+        min_val = -np.max( [np.abs(mostpos), np.abs(mostneg)] )
+
+    print(hist)
+    print(max_val, min_val)
+
     fig, ax = plt.subplots(1,1, figsize=(12,6), facecolor='w', edgecolor='k')
     extents = (xedges.min(), xedges.max(),
             yedges.min(), yedges.max())
-    imgplot = ax.imshow(hist.T, cmap='Greys', aspect='equal', origin='lower')
+    imgplot = ax.imshow(hist.T, cmap=cmap, vmax=max_val, vmin=min_val,
+            aspect='equal', origin='lower')
 
-    draw_cell_borders(ax, hist.T, iPlot)
+    draw_cell_borders(ax, allhist.T)
 
     xstep = xedges[1]-xedges[0]
     x_tick_locations = [i for i in range(1,len(xedges),2)]
@@ -38,42 +53,31 @@ def plot_event_histogram(hist, xedges, yedges, title, iPlot):
     fig.colorbar(imgplot)
     plt.show()
 
-def draw_cell_borders(ax, hist, iPlot):
+def draw_cell_borders(ax, hist):
     '''
     Draws borders in the 2D hist plots where data will not exist. Occurs for 
     combinations of distance & angle that area outside the arena.
+
+    The histogram that should be used is the one for all events in the full dataset.
     '''
 
     [M,N] = hist.shape
     lw = 3
 
-    for j in range(N):
-        for i in range(M-1):
-            if(iPlot == 0): # Drawing the borders according to zeros
-                if(hist[i,j] != 0 and hist[i+1,j] == 0 and i != M-1):
-                    ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw) # Draw a line
-                elif(hist[i,j] == 0 and hist[i+1,j] != 0 and i != M-1):
-                    ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw)
+    for j in range(N): # along axis 1 in the histogram
+        for i in range(M-1): # through axis 0
+            if(hist[i,j] != 0 and hist[i+1,j] == 0 and i != M-1):
+                ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw) # Draw a line
+            elif(hist[i,j] == 0 and hist[i+1,j] != 0 and i != M-1):
+                ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw)
 
-            if(iPlot == 1): # Drawing the borders according to NaN
-                if(~np.isnan(hist[i,j]) and np.isnan(hist[i+1,j]) and i != M-1):
-                    ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw)
-                elif(np.isnan(hist[i,j]) and ~np.isnan(hist[i+1,j]) and i != M-1):
-                    ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw)
+    for i in range(M): # along axis 0 in the histogram
+        for j in range(N-1): # through axis 1
+            if(hist[i,j] != 0 and hist[i,j+1] == 0 and j != N-1):
+                ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw) # Draw a line
+            elif(hist[i,j] == 0 and hist[i,j+1] != 0 and j != N-1):
+                ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw)
 
-    for i in range(M):
-        for j in range(N-1):
-            if(iPlot == 0): # Drawing the borders according to zeros
-                if(hist[i,j] != 0 and hist[i,j+1] == 0 and j != N-1):
-                    ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw) # Draw a line
-                elif(hist[i,j] == 0 and hist[i,j+1] != 0 and j != N-1):
-                    ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw)
-
-            if(iPlot == 1): # Drawing the borders according to NaN
-                if(~np.isnan(hist[i,j]) and np.isnan(hist[i,j+1]) and j != N-1):
-                    ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw)
-                elif(np.isnan(hist[i,j]) and ~np.isnan(hist[i,j+1]) and j != N-1):
-                    ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw)
 
 def create_rink(
     ax, 
