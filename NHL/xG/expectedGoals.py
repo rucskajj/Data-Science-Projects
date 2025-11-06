@@ -52,25 +52,18 @@ if(bDevPlots):
     plt.close()
 
 
-# ---------------------- Distance and angle calculations --------------------- #
+# ---------------------- Calculating histograms for xG model ----------------- #
 
 # Bins for the distance
-dist_edges = np.linspace(0, 78, 27)
+#dist_edges = np.linspace(0, 78, 27)
+dist_edges = np.linspace(0, 80, 21)
 dist_step = dist_edges[1]-dist_edges[0];
 angle_step = 10
 iPrints = 0
 h_shots, h_miss, h_goal, h_all, angle_edges = \
     ch.calculate_all_hists(df, dist_edges, dist_step, angle_step, iPrints)
 
-print( np.sum(h_all[1:h_all.shape[0],:]) )
-
-fig, ax = plt.subplots(1,1, facecolor='w', edgecolor='k')
-extents = (dist_edges.min(), dist_edges.max(),
-        angle_edges.min(), angle_edges.max())
-#imgplot = ax.imshow(hist_goals, extent=extents, origin='lower')
-#imgplot = ax.imshow(hist_all, extent=extents, origin='lower')
-imgplot = ax.imshow((h_goal/h_all).T, extent=extents, origin='lower')
-fig.colorbar(imgplot)
-plt.show()
-
+plttitle = 'xG for all shots'
+pr.plot_event_histogram(h_goal/h_all,
+        dist_edges, angle_edges, plttitle, iPlot=1)
 
