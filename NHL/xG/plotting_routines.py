@@ -2,33 +2,41 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-#def add_angle_lines(ax, angles):
-#    angles *= np.pi/180
 
-def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot):
+def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot,
+        diff=None, var=None):
     '''
     Formats the 2D histogram plots.
     '''
-
+    
+    # have to check for nans. I am leaving the NaNs in until just before
+    # plotting on purpose. It is useful to have them around to easily cut
+    # out data.
     if(iPlot == 0): # Plotting a value that is not a difference
         cmap = 'Greys'
         max_val = np.max(hist[~np.isnan(hist)])
         min_val = np.min(hist[~np.isnan(hist)])
-    if(iPlot == 1): # Plotting a value that is not a difference
+    if(iPlot == 1): # Plotting a value that is a difference
         cmap = 'bwr'
         mostpos = np.max(hist[~np.isnan(hist)])
         mostneg = np.min(hist[~np.isnan(hist)])
         max_val =  np.max( [np.abs(mostpos), np.abs(mostneg)] )
         min_val = -np.max( [np.abs(mostpos), np.abs(mostneg)] )
 
-    print(hist)
-    print(max_val, min_val)
 
     fig, ax = plt.subplots(1,1, figsize=(12,6), facecolor='w', edgecolor='k')
     extents = (xedges.min(), xedges.max(),
             yedges.min(), yedges.max())
     imgplot = ax.imshow(hist.T, cmap=cmap, vmax=max_val, vmin=min_val,
             aspect='equal', origin='lower')
+
+    if(iPlot == 1):
+        ax.annotate(r'diff = {:.2e}'.format(diff),
+                xy=(0.75,0.92), xycoords='axes fraction',
+                fontsize=16, color='black')
+        ax.annotate(r'var = {:.2e}'.format(var),
+                xy=(0.75,0.82), xycoords='axes fraction',
+                fontsize=16, color='black')
 
     draw_cell_borders(ax, allhist.T)
 
@@ -50,7 +58,10 @@ def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot):
     ax.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=12)
     ax.set_title(title, fontsize=18, pad=20)
 
-    fig.colorbar(imgplot)
+    cb = fig.colorbar(imgplot)
+    cb.set_label(r'$\Delta xG=(xG)_{\text{subset}} - (xG)_{\text{all data}}$',
+            fontsize=18, labelpad=10)
+
     plt.show()
 
 def draw_cell_borders(ax, hist):
