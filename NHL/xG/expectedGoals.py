@@ -9,25 +9,10 @@ bMakePlots = False
 # Read in raw data from selected_data.py script
 filename = './cleaned_data.csv'
 df = pd.read_csv(filename)
-df = df.dropna(axis=0, how='any')
 print('\nDetails on the full data set:')
 print('Number of records:', len(df.index))
 print('Available columns:')
 print(df.columns.values)
-
-
-# ---------------------- Distance and angle calculations --------------------- #
-
-# Calculate the distance ("radius") from each shot location to centre of the net
-# Also, the angle, measured CW from the -x axis, which points "up" the ice, 
-# directly to the opposing net.
-
-centre_net_x = 89; centre_net_y = 0;
-
-df['distance'] = np.sqrt((df['x']-centre_net_x)**2 +\
-        (df['y']-centre_net_y)**2 )
-df['angle'] = np.arctan2( (df['y']-centre_net_y),
-        -1.0*(df['x']-centre_net_x))*(180/np.pi)
 
 
 # ---------------------- Calculating histograms ------------------------------ #
@@ -68,7 +53,8 @@ inds_ib = ~np.isnan(xG0)
 print('\n---------------------------------------------------------')
 print('Analysis for various subsets of the full data set:')
 
-collist = ['bReb', 'type']
+collist = ['bReb', 'type', 'bPlayoffs', 'bForwardPlayer',
+        'PlayingStrength', 'anglesign']
 alldiffs  = []
 allvars   = []
 allmaxdev = []
@@ -114,11 +100,14 @@ for col in collist:
         numrecords1[i]   = len(subdf.index)
         numrecords2[i]   = np.sum( hs_all[1:hs_all.shape[0],:] )
 
-    print('\nChecking counts for the number of shots:')
-    print('Full dataset\tsum(len(subdf.index))\tsum(shot histogram)')
-    print(f'{len(df.index)}\t\t{np.sum(numrecords1)}\t\t\t{np.sum(numrecords2)}')
+    #print('\nChecking counts for the number of shots:')
+    #print('Full dataset\tsum(len(subdf.index))\tsum(shot histogram)')
+    #print(f'{len(df.index)}\t\t{np.sum(numrecords1)}\t\t\t{np.sum(numrecords2)}')
     alldiffs.append(differences)
     allvars.append(variances)
     allmaxdev.append(maxdeviations)
 
-
+print('---------------------------------')
+#print(alldiffs)
+#print(allvars)
+#print(allmaxdev)
