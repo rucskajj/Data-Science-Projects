@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import plotting_routines as pr
 import calc_routines as cr
 
-bMakePlots = False
+bMakePlots = True
 
 # Read in raw data from selected_data.py script
 filename = './cleaned_data.csv'
@@ -44,7 +44,7 @@ with (np.errstate(divide='ignore', invalid='ignore')):
 print('\n---------------------------------------------------------')
 print('Analysis for various subsets of the full data set:')
 
-#collist = ['bReb', 'bPlayoffs']
+#collist = ['bReb']#, 'bPlayoffs']
 collist = ['bReb', 'type', 'bPlayoffs', 'bForwardPlayer',
         'PlayingStrength', 'anglesign']
 alldiffs  = []
@@ -81,7 +81,8 @@ for col in collist:
             xGs = hs_goal/hs_all
 
 
-        diff, var = cr.calculate_xG_diffvar(xGs, hs_all, xG0)
+        diff, var, deltaxG = cr.calculate_xG_diffvardelta(
+                xGs, hs_all, xG0)
 
         # Sets nan's to zero to call to np.max() below
         xGs[np.isnan(xGs)] = 0
@@ -103,9 +104,9 @@ for col in collist:
         ann_nums = [diff, var, numgoals[i], numrecords1[i]]
 
         plttitle = pr.titledict[col+'-'+str(colvals[i])]
-        imgstr = None #imgdir + col + '-' + str(colvals[i]) + '.png'
+        imgstr = imgdir + col + '-' + str(colvals[i]) + '.png'
         if(bMakePlots):
-            pr.plot_event_histogram(xGs-xG0,
+            pr.plot_event_histogram(deltaxG,
                     dist_edges, angle_edges, h0_all, plttitle, iPlot=1,
                     imgstr=imgstr, ann_nums=ann_nums)
             print(imgstr)

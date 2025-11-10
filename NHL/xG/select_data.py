@@ -3,9 +3,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotting_routines as pr
 
+#inputfile_yearlist = [2024]
+inputfile_yearlist = ['2021','2022','2023','2024']
 
-filename = './data/shotsdata_MP/shots_2024.csv'
-fulldf = pd.read_csv(filename)
+if len(inputfile_yearlist) == 1:
+    filename = './data/shotsdata_MP/shots_2024.csv'
+    fulldf = pd.read_csv(filename)
+
+elif len(inputfile_yearlist) > 1: 
+    filename = './data/shotsdata_MP/shots_'+\
+            inputfile_yearlist[0]+'.csv'
+
+    fulldf = pd.read_csv(filename)
+    print(filename)
+    for year in inputfile_yearlist[1:]:
+        filename = './data/shotsdata_MP/shots_'+year+'.csv'
+        print(filename)
+        subdf = pd.read_csv(filename)
+        fulldf = pd.concat([fulldf, subdf], ignore_index=True)
+
 print('Columns from full data set:')
 print(fulldf.columns.values)
 print(f'The full data set contains {len(fulldf.index)} records.')
