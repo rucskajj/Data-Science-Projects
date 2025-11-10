@@ -15,7 +15,9 @@ print('Available columns:')
 print(df.columns.values)
 
 
-# ---------------------- Calculating histograms ------------------------------ #
+imgdir = './output/images/2Dhists/'
+
+# -------------------- Calculating histograms -------------------------- #
 
 # Bins for the distance
 #dist_edges = np.linspace(0, 78, 27)
@@ -31,21 +33,10 @@ iPrints = 0
 h0_shots, h0_miss, h0_goal, h0_all, angle_edges = \
     cr.calculate_all_hists(df, dist_edges, dist_step, angle_step, iPrints)
 
-# I WANT NaN's in xG0. It informs where the invalid histogram regions are
+# For now, I want NaN's in xG0. It informs where the invalid
+# histogram regions are
 with (np.errstate(divide='ignore', invalid='ignore')):
     xG0 = h0_goal/h0_all
-
-
-# Boolean array to pick out valid data that are within the bounds of the arena
-# Assumes raw data set is large enough that any bin in h0_all that is equal to
-# zero is out of bounds
-inds_ib = ~np.isnan(xG0) 
-# xG0[np.isnan(xG0)] = 0 # can use this to set NaNs to zero.
-
-#plttitle = 'Histogram of goals'
-#pr.plot_event_histogram(h0_goal,
-#        dist_edges, angle_edges, h0_all, plttitle, iPlot=0)
-# 1D histogram of counts in h0_goal and (h0_shots+h0_miss)?
 
 
 # ------- Slices of the Data Set ------- #
@@ -53,19 +44,26 @@ inds_ib = ~np.isnan(xG0)
 print('\n---------------------------------------------------------')
 print('Analysis for various subsets of the full data set:')
 
+#collist = ['bReb', 'bPlayoffs']
 collist = ['bReb', 'type', 'bPlayoffs', 'bForwardPlayer',
         'PlayingStrength', 'anglesign']
 alldiffs  = []
 allvars   = []
 allmaxdev = []
+allnshots = []
+allngoals = []
+allcolvals = []
+
 for col in collist:
     colvals = df[col].unique()
+    allcolvals.append(list(colvals))
 
     Ncolvals = len(colvals)
 
     differences   = np.zeros(Ncolvals)
     variances     = np.zeros(Ncolvals)
     maxdeviations = np.zeros(Ncolvals)
+    numgoals      = np.zeros(Ncolvals, dtype=int)
     numrecords1   = np.zeros(Ncolvals, dtype=int)
     numrecords2   = np.zeros(Ncolvals, dtype=int)
 
@@ -82,23 +80,36 @@ for col in collist:
         with (np.errstate(divide='ignore', invalid='ignore')):
             xGs = hs_goal/hs_all
 
-        plttitle = r'$\Delta$ Placeholder.'
 
         diff, var = cr.calculate_xG_diffvar(xGs, hs_all, xG0)
-        print(f'diff = {diff:.4e},\tvariance = {var:.4e}')
-        print(f'max deviation = {np.max(np.abs(xGs-xG0)):.4e}\
-                num shots = {len(subdf.index):d}')
 
-        if(bMakePlots):
-            pr.plot_event_histogram(xGs-xG0,
-                    dist_edges, angle_edges, h0_all, plttitle, iPlot=1,
-                    diff=diff, var=var)
+        # Sets nan's to zero to call to np.max() below
+        xGs[np.isnan(xGs)] = 0
+        xG0[np.isnan(xG0)] = 0
 
         differences[i]   = diff
         variances[i]     = var
         maxdeviations[i] = np.max(np.abs(xGs-xG0))
         numrecords1[i]   = len(subdf.index)
         numrecords2[i]   = np.sum( hs_all[1:hs_all.shape[0],:] )
+        numgoals[i]      = \
+                len( subdf.loc[ subdf['event'].isin(['GOAL'])].index)
+
+        print(f'diff = {diff:.4e},\tvariance = {var:.4e}')
+        print(f'max deviation = {maxdeviations[i]}')
+        print(f'num shots = {len(subdf.index):d}, num goals = {numgoals[i]}')
+        
+        # Data to be added to plot via ax.annotate()
+        ann_nums = [diff, var, numgoals[i], numrecords1[i]]
+
+        plttitle = pr.titledict[col+'-'+str(colvals[i])]
+        imgstr = None #imgdir + col + '-' + str(colvals[i]) + '.png'
+        if(bMakePlots):
+            pr.plot_event_histogram(xGs-xG0,
+                    dist_edges, angle_edges, h0_all, plttitle, iPlot=1,
+                    imgstr=imgstr, ann_nums=ann_nums)
+            print(imgstr)
+
 
     #print('\nChecking counts for the number of shots:')
     #print('Full dataset\tsum(len(subdf.index))\tsum(shot histogram)')
@@ -106,8 +117,15 @@ for col in collist:
     alldiffs.append(differences)
     allvars.append(variances)
     allmaxdev.append(maxdeviations)
+    allngoals.append(numgoals)
+    allnshots.append(numrecords1)
 
 print('---------------------------------')
 #print(alldiffs)
 #print(allvars)
 #print(allmaxdev)
+#print(allcolvals)
+
+#pr.conditions_plot(collist, allcolvals,
+#        alldiffs, allvars)
+

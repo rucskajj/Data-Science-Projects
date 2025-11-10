@@ -75,6 +75,12 @@ strPS_end = [str(s) for s in subdf['dnPlayers'].values]
 from operator import add
 subdf['PlayingStrength'] = list( map(add, strPS_start, strPS_end) )
 
+PSlist = ['5v5', '4v5', '5v4', '6v5', '5v3', '4v4', '3v3']
+subdf = subdf.loc[subdf['PlayingStrength'].isin(PSlist)]
+print('Chosen playing strength conditions:')
+print(PSlist)
+print(f'After dropping unwanted playing strength conditions, there are {len(subdf.index)} records.\n')
+
 
 # If gameID >= 30000 in this data set, that was a playoff game
 subdf['bPlayoffs'] = np.ones(len(subdf.index), dtype=int)

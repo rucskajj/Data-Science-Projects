@@ -120,3 +120,4 @@ print(df.columns.values)
 print(f'The cleaned data set has {len(df.index)} records.')
 
 df.to_csv('./cleaned_data.csv', index=False)
+

@@ -3,8 +3,46 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+# ---------------------- 2D Histogram plots ------------------------- #
+
+def conditions_plot(conds, condvals, xdata, ydata,
+        title='', imgstr=None):
+
+    fig, ax = plt.subplots(1,1, figsize=(12,6),
+            facecolor='w', edgecolor='k')
+
+
+    for i in range(len(conds)):
+        ax.plot(xdata[i], ydata[i], '.')
+        
+
+        for anni in range(len(xdata[i])):
+            ax.annotate( str(conds[i])+':'+str(condvals[i][anni]),
+                xy=(xdata[i][anni], ydata[i][anni]),
+                xycoords='data',
+                fontsize=12, color='black')
+
+    ax.set_yscale('log')
+
+    ax.set_xlabel('diff', fontsize=16, labelpad=12)
+    ax.set_ylabel('variance', fontsize=16, labelpad=12)
+    ax.set_title(title, fontsize=18, pad=20)
+    
+
+    if imgstr is None: # plotting the histogram directly
+        plt.show()
+        #plt.close()
+    else: # saving the plot to a file at imgstr
+        plt.savefig(imgstr, bbox_inches='tight')
+        plt.close()
+
+
+
+
+# ---------------------- 2D Histogram plots ------------------------ #
+
 def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot,
-        diff=None, var=None):
+        imgstr=None, ann_nums=None):
     '''
     Formats the 2D histogram plots.
     '''
@@ -31,12 +69,19 @@ def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot,
             aspect='equal', origin='lower')
 
     if(iPlot == 1):
-        ax.annotate(r'diff = {:.2e}'.format(diff),
+        ax.annotate(r'diff = {:.2e}'.format(ann_nums[0]),
                 xy=(0.75,0.92), xycoords='axes fraction',
                 fontsize=16, color='black')
-        ax.annotate(r'var = {:.2e}'.format(var),
+        ax.annotate(r'var = {:.2e}'.format(ann_nums[1]),
                 xy=(0.75,0.82), xycoords='axes fraction',
                 fontsize=16, color='black')
+        ax.annotate(r'$N_{{goals}}$ = {:d}'.format(ann_nums[2]),
+                xy=(0.75,0.72), xycoords='axes fraction',
+                fontsize=16, color='black')
+        ax.annotate(r'$N_{{shots}}$ = {:d}'.format(ann_nums[3]),
+                xy=(0.75,0.62), xycoords='axes fraction',
+                fontsize=16, color='black')
+
 
     draw_cell_borders(ax, allhist.T)
 
@@ -62,7 +107,11 @@ def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot,
     cb.set_label(r'$\Delta xG=(xG)_{\text{subset}} - (xG)_{\text{all data}}$',
             fontsize=18, labelpad=10)
 
-    plt.show()
+    if imgstr is None: # plotting the histogram directly
+        plt.show()
+    else: # saving the plot to a file at imgstr
+        plt.savefig(imgstr, bbox_inches='tight')
+        plt.close()
 
 def draw_cell_borders(ax, hist):
     '''
@@ -89,6 +138,7 @@ def draw_cell_borders(ax, hist):
             elif(hist[i,j] == 0 and hist[i,j+1] != 0 and j != N-1):
                 ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw)
 
+# ---------------------- Routine for drawing a hockey rink ------------- #
 
 def create_rink(
     ax, 
@@ -198,3 +248,35 @@ def create_rink(
     ax.spines['top'].set_visible(False)
 
 
+
+# ---------------------- Book-keeping Dictionaries ----------------- #
+
+# For titles for the Delta xG histogram plots
+
+titledict = {
+        'bReb-0':"$\Delta$ xG for non-rebound shots",
+        'bReb-1':"$\Delta$ xG for rebound shots",
+
+        'type-WRIST':r"$\Delta$ xG for wrist shots",
+        'type-SLAP' :r"$\Delta$ xG for slap shots",
+        'type-TIP'  :r"$\Delta$ xG for tip shots",
+        'type-SNAP' :r"$\Delta$ xG for snap shots",
+        'type-WRAP' :r"$\Delta$ xG for wrap around shots",
+        'type-BACK' :r"$\Delta$ xG for backhand shots",
+        'type-DEFL' :r"$\Delta$ xG for deflected shots",
+
+        'bPlayoffs-0':r"$\Delta$ xG for regular season games",
+        'bPlayoffs-1':r"$\Delta$ xG for playoff games",
+        'bForwardPlayer-0':r"$\Delta$ xG for shots taken by defence",
+        'bForwardPlayer-1':r"$\Delta$ xG for shots taken by forwards",
+        'anglesign-1' :r"$\Delta$ xG for shots from the goalie's right",
+        'anglesign--1':r"$\Delta$ xG for shots from the goalie's left",
+
+        'PlayingStrength-5v5':"$\Delta$ xG for 5v5",
+        'PlayingStrength-4v5':"$\Delta$ xG for 4v5",
+        'PlayingStrength-5v4':"$\Delta$ xG for 5v4",
+        'PlayingStrength-6v5':"$\Delta$ xG for 6v5",
+        'PlayingStrength-5v3':"$\Delta$ xG for 5v3",
+        'PlayingStrength-3v3':"$\Delta$ xG for 3v3",
+        'PlayingStrength-4v4':"$\Delta$ xG for 4v4"
+}
