@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import plotting_routines as pr
 import calc_routines as cr
 
-bMakePlots = True
+bMakePlots = False
 
 # Read in raw data from selected_data.py script
 filename = './cleaned_data.csv'
@@ -45,9 +45,9 @@ print('\n---------------------------------------------------------')
 print('Analysis for various subsets of the full data set:')
 
 # Choose which columns to make histograms for
-#collist = ['bReb']#, 'bPlayoffs']
-collist = ['bReb', 'type', 'bPlayoffs', 'bForwardPlayer',
-        'PlayingStrength', 'anglesign']
+collist = ['bReb']#, 'bPlayoffs']
+#collist = ['bReb', 'type', 'bPlayoffs', 'bForwardPlayer',
+#        'PlayingStrength', 'anglesign']
 
 # Empty lists to append summary data into
 alldiffs   = []
@@ -87,6 +87,13 @@ for col in collist:
 
         with (np.errstate(divide='ignore', invalid='ignore')):
             xGs = hs_goal/hs_all # 2D expected goals histogram
+
+        # ----------------------- Histograms and heatmaps ------------- #
+
+        cb_label = r'Number of shots'
+        pr.plot_hist_with_heatmap(hs_all, dist_edges, angle_edges,
+                h0_all, '', cb_label,
+                subdf['x'].values, subdf['y'].values)
 
 
         # ----------------------- delta xG ---------------------------- #
@@ -145,6 +152,7 @@ Ngoal0 = len( df.loc[ df['event'].isin(['GOAL'])].index)
 Spercent0 = Ngoal0/Nrecords0
 
 # Make a plot of the statistics/metrics for each column & value
-pr.conditions_plot(collist, allcolvals,
+if(bMakePlots):
+    pr.conditions_plot(collist, allcolvals,
         alldiffs, allshpcts, Spercent0)
 

@@ -1,7 +1,7 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-
+from scipy.ndimage import gaussian_filter
 
 # ---------------------- Scatter plots ------------------------------- #
 
@@ -72,16 +72,166 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg,
 
 # ---------------------- 2D Histogram plots ------------------------ #
 
+def plot_hist_with_heatmap(hist, xedges1, yedges1,
+        allhist, title, cb_label,
+        xdata, ydata):
+    '''
+    Formats the 2D histogram plots.
+    '''
+
+    cmap = 'PuBu'
+    max_val = np.max(hist[~np.isnan(hist)])
+    min_val = np.min(hist[~np.isnan(hist)])
+
+    fig, [ax0, ax1] = plt.subplots(2,1, figsize=(12,12),
+            height_ratios=[1.7,1],
+            facecolor='w', edgecolor='k')
+
+
+    # ---- ax0: Event contour map ontop of rink drawing --- #
+
+    # draw the rink first
+    create_rink(ax0, board_radius=28, plot_half=True)
+    ax0.set_aspect('equal') # to draw rink with correct scale in x & y
+
+    # Bin all events in x-y coordinates, on a grid with 1 ft spacing
+    xedges0 = np.linspace(0,100,101)
+    yedges0 = np.linspace(-43,43,87)
+    extents = (xedges0.min(), xedges0.max(),
+            yedges0.min(), yedges0.max())
+    [histxy, xe, ye] = np.histogram2d(xdata, ydata,
+            bins=(xedges0,yedges0))
+
+    # smooth the histogram using a gaussian filter
+    #histxy_smooth = gaussian_filter(histxy.T, sigma=2)
+    histxy_smooth = np.copy(histxy.T)
+
+    # Need the centres of the hist bin egdes for call to contourf
+    xcen0 = xedges0[:-1]+0.5*(xedges0[1]-xedges0[0])
+    ycen0 = yedges0[:-1]+0.5*(yedges0[1]-yedges0[0])
+    xm, ym = np.meshgrid(xcen0, ycen0)
+
+    # Create a contour plot, or heat map
+    histmin = np.min(histxy_smooth); histmax = np.max(histxy_smooth);
+    ctrf = ax0.contourf(xcen0, ycen0, histxy_smooth, alpha=0.85,
+            cmap=cmap, vmin=histmin, vmax=histmax,
+            levels = np.linspace(1,histmax,12))
+    cb = fig.colorbar(ctrf)
+    cb.set_label(cb_label, fontsize=18, labelpad=10)
+
+    
+    draw_hist_bins(ax0, xedges1[1:], yedges1, alpha=0.6)
+
+
+    # Flip this xaxis so the rink is drawn with increasing distance from
+    # left to right, to match the histogram
+    ax0.invert_xaxis()
+    ax0.set_xticks([89, 69, 49, 25, 0])
+    ax0.set_xticklabels(['0', '20', '40', '64', '90'], fontsize=11)
+
+    # ---- ax1: 2D histogram of event in distance-angle --- #
+
+    # histogram is calculated outside of this function, passed in
+    # via the hist variable
+    imgplot = ax1.imshow(hist.T, cmap=cmap, vmax=max_val, vmin=min_val,
+            aspect='equal', origin='lower')
+    draw_cell_borders(ax1, allhist.T)
+
+    xstep = xedges1[1]-xedges1[0]
+    x_tick_locations = [i for i in range(1,len(xedges1),2)]
+    x_tick_labels = [int(xedges1[i]+0.5*xstep) for i in x_tick_locations]
+
+    ystep = yedges1[1]-yedges1[0]
+    y_tick_locations = [i for i in range(len(yedges1)-1)]
+    y_tick_labels = [int(yedges1[i]+0.5*ystep) for i in y_tick_locations]
+    y_tick_labels[-1] = '>90'
+
+    ax1.set_xticks(x_tick_locations)
+    ax1.set_xticklabels(x_tick_labels, fontsize=14)
+    ax1.set_yticks(y_tick_locations)
+    ax1.set_yticklabels(y_tick_labels, fontsize=14)
+
+    ax1.set_xlabel('Distance from the net (feet)', fontsize=16, labelpad=12)
+    ax1.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=12)
+    ax1.set_title(title, fontsize=18, pad=20)
+
+    cb = fig.colorbar(imgplot)
+    cb.set_label(cb_label, fontsize=18, labelpad=10)
+
+    plt.show()
+
+
+def draw_hist_bins(ax, r_bins, theta_bins,
+        lw=1.5, ls='--', alpha=0.5, zorder=-10):
+    '''
+    Adds lines representing the distance-angle bins used
+    in the 2D histograms.
+    '''
+    rink_width = 85    
+    centre_net_x = 89; centre_net_y = 0;
+
+    # Draw lines for the bin_edges associated with distance
+    for r in r_bins:    
+
+        # arc intersects the boards
+        if(r > 0.5*rink_width):
+            xt = np.sqrt( r**2 - (0.5*rink_width)**2 )
+            yt = 0.5*rink_width
+            anglet = np.arctan2(yt, xt) * (180/np.pi) # degrees
+            ax.add_artist(mpl.patches.Arc(
+                (centre_net_x, centre_net_y), 2*r, 2*r,
+                theta1=-anglet, theta2=anglet, angle=180,
+                edgecolor='Black', lw=lw, ls=ls,
+                alpha=alpha, zorder=zorder))
+
+        # arc intersects the goal line
+        elif(r <= 0.5*rink_width):
+            ax.add_artist(mpl.patches.Arc(
+                (centre_net_x, centre_net_y), 2*r, 2*r,
+                theta1=-90, theta2=90, angle=180,
+                edgecolor='Black', lw=lw, ls=ls,
+                alpha=alpha, zorder=zorder))
+       
+
+    # Angle to determine whether this line intersects with the 
+    # centre line or the boards
+    thetac = (180/np.pi)*np.arctan2( (0.5*rink_width), centre_net_x )
+
+    # Draw lines for the bin edges associated with angle
+    for th in theta_bins:
+        if (th < thetac): # intersects centre line
+            yt = centre_net_x * np.tan(th*(np.pi/180) )
+
+            # plot two straight lines, for pos & neg angles
+            for anglesign in [-1, 1]:
+                ax.plot( [0, centre_net_x],
+                        [yt*anglesign, centre_net_y],
+                    color='Black', lw=lw, ls=ls,
+                    alpha=alpha, zorder=zorder)
+
+        elif (th > thetac): # intersects boards
+            xt = (0.5*rink_width)/np.tan(th*(np.pi)/180)
+            xi = centre_net_x - xt
+
+            # plot two straight lines, for pos & neg angles
+            for anglesign in [-1,1]:
+                ax.plot( [xi, centre_net_x],
+                        [anglesign*0.5*rink_width, centre_net_y],
+                    color='Black', lw=lw, ls=ls,
+                    alpha=alpha, zorder=zorder)
+
+
+
+
 def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot,
         imgstr=None, ann_nums=None):
     '''
     Formats the 2D histogram plots.
     '''
-    
-    # have to check for nans. I am leaving the NaNs in until just before
+    # Have to check for nans. I am leaving the NaNs in until just before
     # plotting on purpose. It is useful to have them around to easily cut
     # out data.
-    if(iPlot == 0): # Plotting a value that is not a difference
+    if(iPlot == 0):# Plotting a value that is not a difference
         cmap = 'Greys'
         max_val = np.max(hist[~np.isnan(hist)])
         min_val = np.min(hist[~np.isnan(hist)])
@@ -143,6 +293,7 @@ def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot,
     else: # saving the plot to a file at imgstr
         plt.savefig(imgstr, bbox_inches='tight')
         plt.close()
+
 
 def draw_cell_borders(ax, hist):
     '''

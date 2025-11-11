@@ -3,9 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotting_routines as pr
 
-#inputfile_yearlist = [2024]
+inputfile_yearlist = [2024]
 #inputfile_yearlist = ['2021','2022','2023','2024']
-inputfile_yearlist = [str(x) for x in range(2015,2025)]
+#inputfile_yearlist = [str(x) for x in range(2015,2025)]
 
 if len(inputfile_yearlist) == 1:
     filename = './data/shotsdata_MP/shots_2024.csv'
