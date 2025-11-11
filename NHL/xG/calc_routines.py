@@ -67,14 +67,15 @@ def calculate_xG_diffvardelta(xG1, a1, xG0):
 
     # calculate deltaxG only where shots were recorded in the histogram
     deltaxG = np.zeros(a1.shape)
-    diffinds = a1 > 10 # indicies for bins with > 10 shots in them
+    diffinds = a1 > 20 # indicies for bins with > 10 shots in them
     deltaxG[diffinds] = xG1[diffinds] - xG0[diffinds]
 
     # Weight by .... ?
     # number of shots: now this tracks a number with units of goals
     # num shots/mean num shots in subset
     # num shots/total shot in subset
-    deltaxG = (xG1 - xG0)*(a1/np.mean(a1))
+    #deltaxG = (xG1 - xG0)*(a1)/np.mean(a1)
+    #deltaxG = (xG1 - xG0)*(a1)/np.sum(a1)
 
     return weighted_diff, variance, deltaxG
 

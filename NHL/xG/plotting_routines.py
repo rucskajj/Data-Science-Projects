@@ -3,31 +3,62 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-# ---------------------- 2D Histogram plots ------------------------- #
+# ---------------------- Scatter plots ------------------------------- #
 
-def conditions_plot(conds, condvals, xdata, ydata,
+def conditions_plot(conds, condvals, xdata, ydata, yavg,
         title='', imgstr=None):
+    """
+    A scatter plot exploring summarized metrics to compare how
+    subsets of data compare to the full data set.
+    """
 
-    fig, ax = plt.subplots(1,1, figsize=(12,6),
+    fig, ax = plt.subplots(1,1, figsize=(9,6),
             facecolor='w', edgecolor='k')
 
+    xmin = -0.065; xmax = 0.082;
+    ymin = -0.04 ; ymax = 0.12 ;
 
+    # Horizontal & vertical lines through (0,0)
+    ax.plot([xmin, xmax], [0.0  , 0.0  ], 'k--', alpha=0.3)
+    ax.plot([0.0 , 0.0 ], [ymin , ymax ], 'k--', alpha=0.3)
+
+    # Different conditions, e.g. shot type, team strength are in conds
     for i in range(len(conds)):
-        ax.plot(xdata[i], ydata[i], '.')
-        
+        ydata[i] -= yavg # subtract off an average from the ydata set
 
+        # plot the data points
+        # xdata[i] and ydata[i] are each 1D arrays
+        ax.plot(xdata[i], ydata[i], '.')
+
+        cond = conds[i];
         for anni in range(len(xdata[i])):
+            val = condvals[i][anni] # Each value for each condition
+
+            # x,y co-ordinates for annotating text
+            annx = xdata[i][anni]+0.0007
+            anny = ydata[i][anni]+0.0007
+
+            # Manual shifts to avoid overlapping text
+            if(cond=='type' and val=='TIP'):
+                annx -= 0.0122
+                anny -= 0.0056
+            if(cond=='PlayingStrength' and val=='5v3'):
+                annx -= 0.028
+                anny -= 0.0
+
             ax.annotate( str(conds[i])+':'+str(condvals[i][anni]),
-                xy=(xdata[i][anni], ydata[i][anni]),
-                xycoords='data',
+                xy=(annx, anny), xycoords='data',
                 fontsize=12, color='black')
 
-    ax.set_yscale('log')
+    #ax.set_yscale('log')
 
-    ax.set_xlabel('diff', fontsize=16, labelpad=12)
-    ax.set_ylabel('variance', fontsize=16, labelpad=12)
+    ax.set_xlabel(r'Weighted $\Delta$xG', fontsize=16, labelpad=12)
+    ax.set_ylabel(r'$S\%_{{subset}}-S\%_{{all}}$',
+            fontsize=16, labelpad=12)
     ax.set_title(title, fontsize=18, pad=20)
     
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
 
     if imgstr is None: # plotting the histogram directly
         plt.show()
@@ -254,8 +285,8 @@ def create_rink(
 # For titles for the Delta xG histogram plots
 
 titledict = {
-        'bReb-0':"$\Delta$ xG for non-rebound shots",
-        'bReb-1':"$\Delta$ xG for rebound shots",
+        'bReb-0':r"$\Delta$ xG for non-rebound shots",
+        'bReb-1':r"$\Delta$ xG for rebound shots",
 
         'type-WRIST':r"$\Delta$ xG for wrist shots",
         'type-SLAP' :r"$\Delta$ xG for slap shots",
@@ -272,11 +303,11 @@ titledict = {
         'anglesign-1' :r"$\Delta$ xG for shots from the goalie's right",
         'anglesign--1':r"$\Delta$ xG for shots from the goalie's left",
 
-        'PlayingStrength-5v5':"$\Delta$ xG for 5v5",
-        'PlayingStrength-4v5':"$\Delta$ xG for 4v5",
-        'PlayingStrength-5v4':"$\Delta$ xG for 5v4",
-        'PlayingStrength-6v5':"$\Delta$ xG for 6v5",
-        'PlayingStrength-5v3':"$\Delta$ xG for 5v3",
-        'PlayingStrength-3v3':"$\Delta$ xG for 3v3",
-        'PlayingStrength-4v4':"$\Delta$ xG for 4v4"
+        'PlayingStrength-5v5':r"$\Delta$ xG for 5v5",
+        'PlayingStrength-4v5':r"$\Delta$ xG for 4v5",
+        'PlayingStrength-5v4':r"$\Delta$ xG for 5v4",
+        'PlayingStrength-6v5':r"$\Delta$ xG for 6v5",
+        'PlayingStrength-5v3':r"$\Delta$ xG for 5v3",
+        'PlayingStrength-3v3':r"$\Delta$ xG for 3v3",
+        'PlayingStrength-4v4':r"$\Delta$ xG for 4v4"
 }
