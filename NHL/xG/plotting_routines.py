@@ -2,6 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import gaussian_filter
+from scipy import optimize
 
 # ---------------------- Scatter plots ------------------------------- #
 
@@ -73,8 +74,9 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg,
 # ---------------------- 2D Histogram plots ------------------------ #
 
 def plot_hist_with_heatmap(hist, xedges1, yedges1,
-        allhist, title, cb_label,
-        xdata, ydata):
+        allhist, title,
+        xdata, ydata,
+        imgstr=None):
     '''
     Formats the 2D histogram plots.
     '''
@@ -87,6 +89,7 @@ def plot_hist_with_heatmap(hist, xedges1, yedges1,
             height_ratios=[1.7,1],
             facecolor='w', edgecolor='k')
 
+    #ax0.plot(xdata,ydata, '.')
 
     # ---- ax0: Event contour map ontop of rink drawing --- #
 
@@ -95,32 +98,34 @@ def plot_hist_with_heatmap(hist, xedges1, yedges1,
     ax0.set_aspect('equal') # to draw rink with correct scale in x & y
 
     # Bin all events in x-y coordinates, on a grid with 1 ft spacing
-    xedges0 = np.linspace(0,100,101)
-    yedges0 = np.linspace(-43,43,87)
+    xedges0 = np.linspace(-0.5,100.5,102)
+    yedges0 = np.linspace(-42.5,42.5,86)
+
     extents = (xedges0.min(), xedges0.max(),
             yedges0.min(), yedges0.max())
     [histxy, xe, ye] = np.histogram2d(xdata, ydata,
             bins=(xedges0,yedges0))
 
     # smooth the histogram using a gaussian filter
-    #histxy_smooth = gaussian_filter(histxy.T, sigma=2)
-    histxy_smooth = np.copy(histxy.T)
+    histxy_smooth = gaussian_filter(histxy.T, sigma=0)
 
     # Need the centres of the hist bin egdes for call to contourf
     xcen0 = xedges0[:-1]+0.5*(xedges0[1]-xedges0[0])
     ycen0 = yedges0[:-1]+0.5*(yedges0[1]-yedges0[0])
     xm, ym = np.meshgrid(xcen0, ycen0)
 
+    draw_hist_bins(ax0, xedges1[1:], yedges1[:-1], alpha=0.6)
+
     # Create a contour plot, or heat map
     histmin = np.min(histxy_smooth); histmax = np.max(histxy_smooth);
+
     ctrf = ax0.contourf(xcen0, ycen0, histxy_smooth, alpha=0.85,
             cmap=cmap, vmin=histmin, vmax=histmax,
             levels = np.linspace(1,histmax,12))
     cb = fig.colorbar(ctrf)
-    cb.set_label(cb_label, fontsize=18, labelpad=10)
-
+    cb.set_label(r'Density of shots', fontsize=14, labelpad=10)
+    cb.set_ticks([])
     
-    draw_hist_bins(ax0, xedges1[1:], yedges1, alpha=0.6)
 
 
     # Flip this xaxis so the rink is drawn with increasing distance from
@@ -129,16 +134,30 @@ def plot_hist_with_heatmap(hist, xedges1, yedges1,
     ax0.set_xticks([89, 69, 49, 25, 0])
     ax0.set_xticklabels(['0', '20', '40', '64', '90'], fontsize=11)
 
+    ax0.set_xlabel(r'$x$ co-ordinate (feet)', fontsize=16, labelpad=12)
+    ax0.set_ylabel(r'$y$ co-ordinate (feet)', fontsize=16, labelpad=12)
+    ax0.xaxis.set_label_position('top')
+    ax0.xaxis.tick_top()
+
+    ax0.set_title(title, fontsize=18, pad=20)
+
     # ---- ax1: 2D histogram of event in distance-angle --- #
 
     # histogram is calculated outside of this function, passed in
     # via the hist variable
-    imgplot = ax1.imshow(hist.T, cmap=cmap, vmax=max_val, vmin=min_val,
+
+    plothist = np.copy(hist.T)
+    # Assign NaN here so the bins are rendered as white in the plot
+    # NaN is a good choice of value here -- these bins are outside the
+    # O-zone, and thus cannot have data and should be ignored
+    plothist[np.where(allhist.T==0)] = None  
+
+    imgplot = ax1.imshow(plothist, cmap=cmap, vmax=max_val, vmin=min_val,
             aspect='equal', origin='lower')
     draw_cell_borders(ax1, allhist.T)
 
     xstep = xedges1[1]-xedges1[0]
-    x_tick_locations = [i for i in range(1,len(xedges1),2)]
+    x_tick_locations = [i for i in range(1,len(xedges1[:-1]),2)]
     x_tick_labels = [int(xedges1[i]+0.5*xstep) for i in x_tick_locations]
 
     ystep = yedges1[1]-yedges1[0]
@@ -153,12 +172,15 @@ def plot_hist_with_heatmap(hist, xedges1, yedges1,
 
     ax1.set_xlabel('Distance from the net (feet)', fontsize=16, labelpad=12)
     ax1.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=12)
-    ax1.set_title(title, fontsize=18, pad=20)
 
     cb = fig.colorbar(imgplot)
-    cb.set_label(cb_label, fontsize=18, labelpad=10)
+    cb.set_label(r"Number of shots", fontsize=18, labelpad=10)
 
-    plt.show()
+    if imgstr is None: # plotting the histogram directly
+        plt.show()
+    else: # saving the plot to a file at imgstr
+        plt.savefig(imgstr, bbox_inches='tight')
+        plt.close()
 
 
 def draw_hist_bins(ax, r_bins, theta_bins,
@@ -166,15 +188,59 @@ def draw_hist_bins(ax, r_bins, theta_bins,
     '''
     Adds lines representing the distance-angle bins used
     in the 2D histograms.
-    '''
-    rink_width = 85    
-    centre_net_x = 89; centre_net_y = 0;
 
-    # Draw lines for the bin_edges associated with distance
+    theta_bins must be in degrees, and have no number larger than 90.
+    r_bins must be in feet, to match the units of the rink dimensions.
+    '''
+
+    # Relevant NHL rink dimensions, all units are feet
+
+    rink_length = 200
+    rink_width = 85    
+    board_radius = 28
+    # Location of the centre of the net (on the goal line)
+    centre_net_x = 89; centre_net_y = 0;
+    x_blue_line = 25
+    deltaX_goal_boards = 11 # distance from goal line to end boards
+    dist_blue_line = centre_net_x - x_blue_line
+
+    # Two "critical" radii to determine intersections for the bin arcs
+    y_board_corner = 0.5*rink_width - board_radius
+    yc1 = y_board_corner
+    xc1 = deltaX_goal_boards
+    rc1 = np.sqrt(xc1**2 + yc1**2)
+
+    x_board_corner = 0.5*rink_length - board_radius
+    xc2 = centre_net_x - x_board_corner
+    yc2 = 0.5*rink_width
+    rc2 = np.sqrt(xc2**2 + yc2**2)
+
+    # Draw arcs for the bin edges associated with distance (or radius)
     for r in r_bins:    
 
-        # arc intersects the boards
-        if(r > 0.5*rink_width):
+        # arc intersects the side boards and the blue line
+        if (r > dist_blue_line):
+            angle1 = (180/np.pi)*np.arccos(dist_blue_line/r)
+            angle2 = (180/np.pi)*np.arcsin((0.5*rink_width)/r)
+
+            # top part of the arc
+            ax.add_artist(mpl.patches.Arc(
+                (centre_net_x, centre_net_y), 2*r, 2*r,
+                theta1=-angle2, theta2=-angle1, angle=180,
+                edgecolor='Black', lw=lw, ls=ls,
+                alpha=alpha, zorder=zorder))
+
+            # bottom part of the arc
+            ax.add_artist(mpl.patches.Arc(
+                (centre_net_x, centre_net_y), 2*r, 2*r,
+                theta1=angle1, theta2=angle2, angle=180,
+                edgecolor='Black', lw=lw, ls=ls,
+                alpha=alpha, zorder=zorder))
+
+
+
+        # arc intersects both side boards
+        elif(r > rc2 and r <= dist_blue_line):
             xt = np.sqrt( r**2 - (0.5*rink_width)**2 )
             yt = 0.5*rink_width
             anglet = np.arctan2(yt, xt) * (180/np.pi) # degrees
@@ -184,32 +250,82 @@ def draw_hist_bins(ax, r_bins, theta_bins,
                 edgecolor='Black', lw=lw, ls=ls,
                 alpha=alpha, zorder=zorder))
 
-        # arc intersects the goal line
-        elif(r <= 0.5*rink_width):
+        # arc intersects the corner
+        elif(r < rc2 and r > rc1):
+
+            def corner_intersect(x):
+                C1 = r**2
+                C2 = board_radius**2
+                C3 = centre_net_x - (0.5*rink_length-board_radius)
+                C4 = 0.5*rink_width - board_radius #- 10
+
+                #print(C3,C4)
+
+                ysolv = np.sqrt(C1-x**2) - (np.sqrt(C2 - (x+C3)**2) + C4)
+                return ysolv
+
+            # Newton's method would not converge; I suspect because
+            # the function to solve diverges quickly near the solution
+            #xt = optimize.newton(corner_intersect, 11)
+
+            # bisect needs an interval: solution is guaranteed to be
+            # within the interval [-radius of arc, end boards]
+            xt = optimize.bisect(corner_intersect, -r, deltaX_goal_boards)
+
+            anglet = (180/np.pi)*np.arcsin(xt/r)
             ax.add_artist(mpl.patches.Arc(
                 (centre_net_x, centre_net_y), 2*r, 2*r,
-                theta1=-90, theta2=90, angle=180,
+                theta1=-(90+anglet), theta2=(90+anglet), angle=180,
                 edgecolor='Black', lw=lw, ls=ls,
                 alpha=alpha, zorder=zorder))
-       
+
+
+        # arc intersects below the corner boards
+        elif(r < rc1):
+
+            # arc intersects the end boards
+            if ( r > deltaX_goal_boards):
+                theta_gb = (180/np.pi)*np.arcsin( deltaX_goal_boards/r )
+                ax.add_artist(mpl.patches.Arc(
+                    (centre_net_x, centre_net_y), 2*r, 2*r,
+                    theta1=-(90+theta_gb), theta2=(90+theta_gb), angle=180,
+                    edgecolor='Black', lw=lw, ls=ls,
+                    alpha=alpha, zorder=zorder))
+ 
+            # arc intersects no boards; draw a full circle
+            if ( r <= deltaX_goal_boards):
+                ax.add_artist(mpl.patches.Arc(
+                    (centre_net_x, centre_net_y), 2*r, 2*r,
+                    theta1=-180, theta2=180, angle=180,
+                    edgecolor='Black', lw=lw, ls=ls,
+                    alpha=alpha, zorder=zorder))
+      
 
     # Angle to determine whether this line intersects with the 
     # centre line or the boards
-    thetac = (180/np.pi)*np.arctan2( (0.5*rink_width), centre_net_x )
+    xnb = centre_net_x - x_blue_line
+    thetac1 = (180/np.pi)*np.arctan2( (0.5*rink_width), xnb )
 
+    thetac2 = 90 - (180/np.pi)*np.arctan2(
+        centre_net_x - (0.5*rink_length - board_radius), 0.5*rink_width)
     # Draw lines for the bin edges associated with angle
     for th in theta_bins:
-        if (th < thetac): # intersects centre line
-            yt = centre_net_x * np.tan(th*(np.pi/180) )
+        if (th <= thetac1): # intersects the blue line
+            #rmax = np.max(r_bins)
+            #yt = rmax * np.sin(th*(np.pi/180) )
+            #xt = rmax * np.cos(th*(np.pi/180) )
+            yi = dist_blue_line*np.tan(th*(np.pi/180))
+            xi = x_blue_line
 
             # plot two straight lines, for pos & neg angles
             for anglesign in [-1, 1]:
-                ax.plot( [0, centre_net_x],
-                        [yt*anglesign, centre_net_y],
+                ax.plot( [xi, centre_net_x],
+                        [yi*anglesign, centre_net_y],
                     color='Black', lw=lw, ls=ls,
                     alpha=alpha, zorder=zorder)
 
-        elif (th > thetac): # intersects boards
+        #elif (th > thetac1): # intersects boards
+        elif (th > thetac1 and th <= thetac2): # intersects boards
             xt = (0.5*rink_width)/np.tan(th*(np.pi)/180)
             xi = centre_net_x - xt
 
@@ -220,6 +336,35 @@ def draw_hist_bins(ax, r_bins, theta_bins,
                     color='Black', lw=lw, ls=ls,
                     alpha=alpha, zorder=zorder)
 
+        
+        elif (th > thetac2): # intersects corner
+            # Need to solve a quadratic equation
+            centre_circle_x = 0.5*rink_length - board_radius
+            centre_circle_y = 0.5*rink_width  - board_radius
+            aangle = (np.pi/180) * (90-th)
+ 
+            qC = centre_net_x - centre_circle_x - \
+                    centre_circle_y*np.tan(aangle)
+            aC = np.square(np.tan(aangle)) + 1
+            bC = -2.0*np.tan(aangle)*qC
+            cC = np.square(qC) - np.square(board_radius)
+
+            y1 = ( -bC + np.sqrt(bC**2 - 4*aC*cC) ) / (2*aC)
+            y2 = ( -bC - np.sqrt(bC**2 - 4*aC*cC) ) / (2*aC)
+            # I want the positive solution
+            ycc = np.max([y1,y2]) # distance from corner radius circle
+            xcc = np.sqrt(board_radius**2 - ycc**2) # x-dist
+
+            yi = centre_circle_y + ycc
+            xi = centre_circle_x + xcc
+            #print(xi, yi, '\n')
+
+            # plot two straight lines, for pos & neg angles
+            for anglesign in [-1,1]:
+                ax.plot( [xi, centre_net_x],
+                        [yi*anglesign, centre_net_y],
+                    color='Black', lw=lw, ls=ls,
+                    alpha=alpha, zorder=zorder)
 
 
 
@@ -267,7 +412,7 @@ def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot,
     draw_cell_borders(ax, allhist.T)
 
     xstep = xedges[1]-xedges[0]
-    x_tick_locations = [i for i in range(1,len(xedges),2)]
+    x_tick_locations = [i for i in range(1,len(xedges[:-1]),2)]
     x_tick_labels = [int(xedges[i]+0.5*xstep) for i in x_tick_locations]
 
     ystep = yedges[1]-yedges[0]
@@ -416,12 +561,12 @@ def create_rink(
     if plot_half == False:
         # Set axis limits
         ax.set_xlim(-101, 101)
-        #ax.set_ylim(-43, 43)  
+        ax.set_ylim(-43, 43)  
 
     elif plot_half == True:
         # Set axis limits
         ax.set_xlim(-0.5, 100.5)
-        #ax.set_ylim(-43, 43) 
+        ax.set_ylim(-43, 43) 
 
 
     ax.spines['right'].set_visible(False)
@@ -436,29 +581,29 @@ def create_rink(
 # For titles for the Delta xG histogram plots
 
 titledict = {
-        'bReb-0':r"$\Delta$ xG for non-rebound shots",
-        'bReb-1':r"$\Delta$ xG for rebound shots",
+        'bReb-0':r"non-rebound shots",
+        'bReb-1':r"rebound shots",
 
-        'type-WRIST':r"$\Delta$ xG for wrist shots",
-        'type-SLAP' :r"$\Delta$ xG for slap shots",
-        'type-TIP'  :r"$\Delta$ xG for tip shots",
-        'type-SNAP' :r"$\Delta$ xG for snap shots",
-        'type-WRAP' :r"$\Delta$ xG for wrap around shots",
-        'type-BACK' :r"$\Delta$ xG for backhand shots",
-        'type-DEFL' :r"$\Delta$ xG for deflected shots",
+        'type-WRIST':r"wrist shots",
+        'type-SLAP' :r"slap shots",
+        'type-TIP'  :r"tip shots",
+        'type-SNAP' :r"snap shots",
+        'type-WRAP' :r"wrap around shots",
+        'type-BACK' :r"backhand shots",
+        'type-DEFL' :r"deflected shots",
 
-        'bPlayoffs-0':r"$\Delta$ xG for regular season games",
-        'bPlayoffs-1':r"$\Delta$ xG for playoff games",
-        'bForwardPlayer-0':r"$\Delta$ xG for shots taken by defence",
-        'bForwardPlayer-1':r"$\Delta$ xG for shots taken by forwards",
-        'anglesign-1' :r"$\Delta$ xG for shots from the goalie's right",
-        'anglesign--1':r"$\Delta$ xG for shots from the goalie's left",
+        'bPlayoffs-0':r"regular season games",
+        'bPlayoffs-1':r"playoff games",
+        'bForwardPlayer-0':r"shots taken by defence",
+        'bForwardPlayer-1':r"shots taken by forwards",
+        'anglesign-1' :r"shots from the goalie's right",
+        'anglesign--1':r"shots from the goalie's left",
 
-        'PlayingStrength-5v5':r"$\Delta$ xG for 5v5",
-        'PlayingStrength-4v5':r"$\Delta$ xG for 4v5",
-        'PlayingStrength-5v4':r"$\Delta$ xG for 5v4",
-        'PlayingStrength-6v5':r"$\Delta$ xG for 6v5",
-        'PlayingStrength-5v3':r"$\Delta$ xG for 5v3",
-        'PlayingStrength-3v3':r"$\Delta$ xG for 3v3",
-        'PlayingStrength-4v4':r"$\Delta$ xG for 4v4"
+        'PlayingStrength-5v5':r"5v5",
+        'PlayingStrength-4v5':r"4v5",
+        'PlayingStrength-5v4':r"5v4",
+        'PlayingStrength-6v5':r"6v5",
+        'PlayingStrength-5v3':r"5v3",
+        'PlayingStrength-3v3':r"3v3",
+        'PlayingStrength-4v4':r"4v4"
 }

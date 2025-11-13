@@ -15,13 +15,13 @@ print('Available columns:')
 print(df.columns.values)
 
 
-imgdir = './output/images/2Dhists/'
+imgdirpref = './output/images/'
 
 # -------------------- Calculating histograms -------------------------- #
 
 # Bins for the distance
 #dist_edges = np.linspace(0, 78, 27)
-dist_edges = np.linspace(0, 80, 21)
+dist_edges = np.linspace(0, 76, 20)
 dist_step = dist_edges[1]-dist_edges[0];
 angle_step = 10
 iPrints = 0
@@ -75,7 +75,7 @@ for col in collist:
 
     print('\n----------')
     
-    for i in range(Ncolvals):
+    for i in range(1):#Ncolvals):
         print(f'{col}: {colvals[i]}')
 
         # Create a subdata frame based on this column & value
@@ -89,11 +89,44 @@ for col in collist:
             xGs = hs_goal/hs_all # 2D expected goals histogram
 
         # ----------------------- Histograms and heatmaps ------------- #
+        imgdir = imgdirpref + 'Contours-Hists/'
 
-        cb_label = r'Number of shots'
+
+        plttitle = r"Distribution of all events for " +\
+                pr.titledict[col+'-'+str(colvals[i])]
+        imgstr = imgdir + col + '-' + str(colvals[i]) + '-all.png'
+        histdf = subdf.loc[subdf['event'].isin(['SHOT', 'MISS','GOAL'])]
         pr.plot_hist_with_heatmap(hs_all, dist_edges, angle_edges,
-                h0_all, '', cb_label,
-                subdf['x'].values, subdf['y'].values)
+                h0_all, plttitle,
+                histdf['x'].values, histdf['y'].values,
+                imgstr=imgstr)
+
+        plttitle = r"Distribution of SOG for " +\
+                pr.titledict[col+'-'+str(colvals[i])]
+        imgstr = imgdir + col + '-' + str(colvals[i]) + '-SOG.png'
+        histdf = subdf.loc[subdf['event'].isin(['SHOT'])]
+        pr.plot_hist_with_heatmap(hs_shots, dist_edges, angle_edges,
+                h0_all, plttitle,
+                histdf['x'].values, histdf['y'].values,
+                imgstr=imgstr)
+
+        plttitle = r"Distribution of misses for " +\
+                pr.titledict[col+'-'+str(colvals[i])]
+        imgstr = imgdir + col + '-' + str(colvals[i]) + '-miss.png'
+        histdf = subdf.loc[subdf['event'].isin(['MISS'])]
+        pr.plot_hist_with_heatmap(hs_miss, dist_edges, angle_edges,
+                h0_all, plttitle,
+                histdf['x'].values, histdf['y'].values,
+                imgstr=imgstr)
+
+        plttitle = r"Distribution of goals for " +\
+                pr.titledict[col+'-'+str(colvals[i])]
+        imgstr = imgdir + col + '-' + str(colvals[i]) + '-goals.png'
+        histdf = subdf.loc[subdf['event'].isin(['GOAL'])]
+        pr.plot_hist_with_heatmap(hs_goal, dist_edges, angle_edges,
+                h0_all, plttitle,
+                histdf['x'].values, histdf['y'].values,
+                imgstr=imgstr)
 
 
         # ----------------------- delta xG ---------------------------- #
@@ -124,7 +157,9 @@ for col in collist:
         ann_nums = [diff, var, numgoals[i], numrecords1[i]]
 
         # Make a plot of the deltaxG histogram
-        plttitle = pr.titledict[col+'-'+str(colvals[i])]
+        plttitle = r"$\Delta$ xG for " +\
+                pr.titledict[col+'-'+str(colvals[i])]
+        imgdir = imgdirpref + '2Dhists/'
         imgstr = imgdir + col + '-' + str(colvals[i]) + '.png'
         if(bMakePlots):
             pr.plot_event_histogram(deltaxG,
