@@ -367,6 +367,110 @@ def draw_hist_bins(ax, r_bins, theta_bins,
                     alpha=alpha, zorder=zorder)
 
 
+def plot_xG_deltaxG(xGhist, dxGhist, xedges, yedges, allhist, title, iPlot,
+        imgstr=None, ann_nums=None):
+    '''
+    Formats the 2D histogram plots.
+    '''
+    # Have to check for nans. I am leaving the NaNs in until just before
+    # plotting on purpose. It is useful to have them around to easily cut
+    # out data.
+    if(iPlot == 0):# Plotting a value that is not a difference
+        cmap = 'Greys'
+        max_val = np.max(dxGhist[~np.isnan(dxGhist)])
+        min_val = np.min(dxGhist[~np.isnan(dxGhist)])
+    if(iPlot == 1): # Plotting a value that is a difference
+        cmap = 'bwr'
+        mostpos = np.max(dxGhist[~np.isnan(dxGhist)])
+        mostneg = np.min(dxGhist[~np.isnan(dxGhist)])
+        max_val =  np.max( [np.abs(mostpos), np.abs(mostneg)] )
+        min_val = -np.max( [np.abs(mostpos), np.abs(mostneg)] )
+
+
+    fig, [ax0, ax1] = plt.subplots(2,1, figsize=(9,9), #sharex=True,
+            facecolor='w', edgecolor='k')#, tight_layout=True)
+    plt.subplots_adjust(hspace=0.05)
+    
+    extents = (xedges.min(), xedges.max(),
+            yedges.min(), yedges.max())
+
+
+    imgplot0 = ax0.imshow(xGhist.T, cmap='Greys',
+            #vmax=max_val, vmin=min_val,
+            aspect='equal', origin='lower')
+
+    cb0 = fig.colorbar(imgplot0, ax=ax0,
+            fraction=0.12, pad=0.02, aspect=15, shrink=0.9)
+    cb0.set_label(r'$xG=n_{{goals}}/n_{{all events}}$',
+            fontsize=18, labelpad=10)
+    cb0.ax.yaxis.set_tick_params(labelsize=14)
+
+
+    imgplot1 = ax1.imshow(dxGhist.T, cmap=cmap, vmax=max_val, vmin=min_val,
+            aspect='equal', origin='lower')
+
+    if(iPlot == 1):
+        ax1.annotate(r'diff = {:.2e}'.format(ann_nums[0]),
+                xy=(0.68,0.92), xycoords='axes fraction',
+                fontsize=16, color='black')
+        ax1.annotate(r'var = {:.2e}'.format(ann_nums[1]),
+                xy=(0.68,0.82), xycoords='axes fraction',
+                fontsize=16, color='black')
+        ax0.annotate(r'$N_{{goals}}$ = {:d}'.format(ann_nums[2]),
+                xy=(0.68,0.92), xycoords='axes fraction',
+                fontsize=16, color='black')
+        ax0.annotate(r'$N_{{shots}}$ = {:d}'.format(ann_nums[3]),
+                xy=(0.68,0.82), xycoords='axes fraction',
+                fontsize=16, color='black')
+        ax0.annotate(r'$S\% [frac]$ = {:.3f}'.format(
+                ann_nums[2]/ann_nums[3]),
+                xy=(0.68,0.72), xycoords='axes fraction',
+                fontsize=16, color='black')
+
+    draw_cell_borders(ax0, allhist.T)
+    draw_cell_borders(ax1, allhist.T)
+
+    xstep = xedges[1]-xedges[0]
+    x_tick_locations = [i for i in range(1,len(xedges[:-1]),2)]
+    x_tick_labels = [int(xedges[i]+0.5*xstep) for i in x_tick_locations]
+
+    ystep = yedges[1]-yedges[0]
+    y_tick_locations = [i for i in range(len(yedges)-1)]
+    y_tick_labels = [int(yedges[i]+0.5*ystep) for i in y_tick_locations]
+    y_tick_labels[-1] = '>90'
+
+    ax0.set_xticks([])
+    #ax0xticks = ax0.xaxis.get_major_ticks().set_xticks([])
+    ax0.set_yticks(y_tick_locations)
+    ax0.set_yticklabels(y_tick_labels, fontsize=14)
+    #ax0.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=12)
+    ax0.set_title(title, fontsize=18, pad=20)
+
+    ax1.set_xticks(x_tick_locations)
+    ax1.set_xticklabels(x_tick_labels, fontsize=14)
+    ax1.set_yticks(y_tick_locations)
+    ax1.set_yticklabels(y_tick_labels, fontsize=14)
+
+    ax1.set_xlabel('Distance from the net (feet)', fontsize=16, labelpad=12)
+
+    cb1 = fig.colorbar(imgplot1, ax=ax1,
+            fraction=0.12, pad=0.02, aspect=15, shrink=0.9)
+    cb1.set_label(r'$\Delta xG=(xG)_{\text{subset}} - (xG)_{\text{all data}}$',
+            fontsize=18, labelpad=10)
+    cb1.ax.yaxis.set_tick_params(labelsize=14)
+
+
+    ax = fig.add_subplot(111, frameon=False)
+    ax.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=50)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    if imgstr is None: # plotting the histogram directly
+        plt.show()
+    else: # saving the plot to a file at imgstr
+        plt.savefig(imgstr, bbox_inches='tight')
+        plt.close()
+
 
 def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot,
         imgstr=None, ann_nums=None):
