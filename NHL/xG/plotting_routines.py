@@ -4,74 +4,69 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from scipy import optimize
 
-# ---------------------- Scatter plots ------------------------------- #
+# ---------------------- Routine for plots with histograms ------------- #
 
-def conditions_plot(conds, condvals, xdata, ydata, yavg,
-        title='', imgstr=None):
-    """
-    A scatter plot exploring summarized metrics to compare how
-    subsets of data compare to the full data set.
-    """
+def make_all_ctr_hist_plots(subdf, titledict, imgdir,
+        column, column_value,
+        hist_SAT, hist_shots, hist_misses, hist_goals,
+        dist_edges, angle_edges, hist0_SAT):
+    '''
+    A routine that calls the plot_hist_with_heatmap routine for the
+    various events: SOG, misses, goals, SAT.
+    '''
 
-    fig, ax = plt.subplots(1,1, figsize=(9,6),
-            facecolor='w', edgecolor='k')
-
-    xmin = -0.065; xmax = 0.082;
-    ymin = -0.04 ; ymax = 0.12 ;
-
-    # Horizontal & vertical lines through (0,0)
-    ax.plot([xmin, xmax], [0.0  , 0.0  ], 'k--', alpha=0.3)
-    ax.plot([0.0 , 0.0 ], [ymin , ymax ], 'k--', alpha=0.3)
-
-    # Different conditions, e.g. shot type, team strength are in conds
-    for i in range(len(conds)):
-        ydata[i] -= yavg # subtract off an average from the ydata set
-
-        # plot the data points
-        # xdata[i] and ydata[i] are each 1D arrays
-        ax.plot(xdata[i], ydata[i], '.')
-
-        cond = conds[i];
-        for anni in range(len(xdata[i])):
-            val = condvals[i][anni] # Each value for each condition
-
-            # x,y co-ordinates for annotating text
-            annx = xdata[i][anni]+0.0007
-            anny = ydata[i][anni]+0.0007
-
-            # Manual shifts to avoid overlapping text
-            if(cond=='type' and val=='TIP'):
-                annx -= 0.0122
-                anny -= 0.0056
-            if(cond=='PlayingStrength' and val=='5v3'):
-                annx -= 0.028
-                anny -= 0.0
-
-            ax.annotate( str(conds[i])+':'+str(condvals[i][anni]),
-                xy=(annx, anny), xycoords='data',
-                fontsize=12, color='black')
-
-    #ax.set_yscale('log')
-
-    ax.set_xlabel(r'Weighted $\Delta$xG', fontsize=16, labelpad=12)
-    ax.set_ylabel(r'$S\%_{{subset}}-S\%_{{all}}$',
-            fontsize=16, labelpad=12)
-    ax.set_title(title, fontsize=18, pad=20)
+    # SAT: shot attempts = SOG + miss + goal
+    plttitle = r"Distribution of all SAT for " +\
+            titledict[column+'-'+str(column_value)]
+    imgstr = imgdir + column + '-' + str(column_value) +\
+            '-SAT.png'
+    histdf = subdf.loc[subdf['event'].isin(['SHOT', 'MISS','GOAL'])]
     
-    ax.set_xlim(xmin, xmax)
-    ax.set_ylim(ymin, ymax)
-
-    if imgstr is None: # plotting the histogram directly
-        plt.show()
-        #plt.close()
-    else: # saving the plot to a file at imgstr
-        plt.savefig(imgstr, bbox_inches='tight')
-        plt.close()
+    plot_hist_with_heatmap(hist_SAT,
+            dist_edges, angle_edges, hist0_SAT, plttitle,
+            histdf['x'].values, histdf['y'].values,
+            imgstr=imgstr)
 
 
+    # SOG: shots on goal
+    plttitle = r"Distribution of SOG for " +\
+            titledict[column+'-'+str(column_value)]
+    imgstr = imgdir + column + '-' + str(column_value) + '-SOG.png'
+    histdf = subdf.loc[subdf['event'].isin(['SHOT'])]
+    
+    plot_hist_with_heatmap(hist_shots,
+            dist_edges, angle_edges, hist0_SAT, plttitle,
+            histdf['x'].values, histdf['y'].values,
+            imgstr=imgstr)
 
 
-# ---------------------- 2D Histogram plots ------------------------ #
+    # Miss: shots that missed the net
+    plttitle = r"Distribution of misses for " +\
+            titledict[column+'-'+str(column_value)]
+    imgstr = imgdir + column + '-' + str(column_value) + '-miss.png'
+    histdf = subdf.loc[subdf['event'].isin(['MISS'])]
+    
+    plot_hist_with_heatmap(hist_misses,
+            dist_edges, angle_edges, hist0_SAT, plttitle,
+            histdf['x'].values, histdf['y'].values,
+            imgstr=imgstr)
+
+
+    # shots resulting in a goal
+    plttitle = r"Distribution of goals for " +\
+            titledict[column+'-'+str(column_value)]
+    imgstr = imgdir + column + '-' + str(column_value) + '-goal.png'
+    histdf = subdf.loc[subdf['event'].isin(['GOAL'])]
+    
+    plot_hist_with_heatmap(hist_goals,
+            dist_edges, angle_edges, hist0_SAT, plttitle,
+            histdf['x'].values, histdf['y'].values,
+            imgstr=imgstr)
+
+
+
+
+# ---------------------- Routine for plots with histograms ------------- #
 
 def plot_hist_with_heatmap(hist, xedges1, yedges1,
         allhist, title,
@@ -114,7 +109,7 @@ def plot_hist_with_heatmap(hist, xedges1, yedges1,
     ycen0 = yedges0[:-1]+0.5*(yedges0[1]-yedges0[0])
     xm, ym = np.meshgrid(xcen0, ycen0)
 
-    draw_hist_bins(ax0, xedges1[1:], yedges1[:-1], alpha=0.6)
+    draw_hist_bins_on_rink(ax0, xedges1[1:], yedges1[:-1], alpha=0.6)
 
     # Create a contour plot, or heat map
     histmin = np.min(histxy_smooth); histmax = np.max(histxy_smooth);
@@ -183,10 +178,343 @@ def plot_hist_with_heatmap(hist, xedges1, yedges1,
         plt.close()
 
 
-def draw_hist_bins(ax, r_bins, theta_bins,
+def plot_xG_deltaxG(xGhist, dxGhist, xedges, yedges, allhist, title,
+        imgstr=None, ann_nums=None):
+    '''
+    Creates a 2-panel plot with two histograms: xG on the top,
+    and a deltaxG on the bottom. Both of these histograms have
+    to be passed in.
+    '''
+
+    # Setting up ticks, ticklabels, and extents for imshow
+
+    xstep = xedges[1]-xedges[0]
+    x_tick_locations = [i for i in range(1,len(xedges[:-1]),2)]
+    x_tick_labels = [int(xedges[i]+0.5*xstep) for i in x_tick_locations]
+
+    ystep = yedges[1]-yedges[0]
+    y_tick_locations = [i for i in range(len(yedges)-1)]
+    y_tick_labels = [int(yedges[i]+0.5*ystep) for i in y_tick_locations]
+    y_tick_labels[-1] = '>90'
+
+    extents = (xedges.min(), xedges.max(), yedges.min(), yedges.max())
+
+
+    # Create a fig with two axes
+    fig, [ax0, ax1] = plt.subplots(2,1, figsize=(9,9), sharex=True,
+            facecolor='w', edgecolor='k')
+    plt.subplots_adjust(hspace=0.05)
+    
+
+    # ---------- ax0: a plot of xG ------------------------------ #
+
+    imgplot0 = ax0.imshow(xGhist.T, cmap='Greys',
+            #vmax=max_val, vmin=min_val,
+            aspect='equal', origin='lower')
+    draw_cell_borders(ax0, allhist.T)
+
+    # annotations for number of goals & SAT
+    ax0.annotate(r'$N_{{goals}}$ = {:d}'.format(ann_nums[2]),
+            xy=(0.68,0.92), xycoords='axes fraction',
+            fontsize=16, color='black')
+    ax0.annotate(r'$N_{{SAT}}$ = {:d}'.format(ann_nums[3]),
+            xy=(0.68,0.82), xycoords='axes fraction',
+            fontsize=16, color='black')
+    ax0.annotate(r'$S\% [frac]$ = {:.3f}'.format(
+            ann_nums[2]/ann_nums[3]),
+            xy=(0.68,0.72), xycoords='axes fraction',
+            fontsize=16, color='black')
+
+    # set up colourbar
+    cb0 = fig.colorbar(imgplot0, ax=ax0,
+            fraction=0.12, pad=0.02, aspect=15, shrink=0.9)
+    cb0.set_label(r'$xG=n_{{goals}}/n_{{all events}}$',
+            fontsize=18, labelpad=10)
+    cb0.ax.yaxis.set_tick_params(labelsize=14)
+
+    # set up ticks
+    ax0.set_xticks([])
+    ax0.set_yticks(y_tick_locations)
+    ax0.set_yticklabels(y_tick_labels, fontsize=14)
+    ax0.set_title(title, fontsize=18, pad=20)
+
+    # ---------- ax1: a plot of Delta xG ------------------------- #
+
+    # set up max & min values for the colourbar
+
+    # Have to check for nans. I have left the NaNs in until just before
+    # plotting on purpose. It is useful to have them around, to remind
+    # myself that there shouldn't be data plotted @ the nan's
+    mostpos = np.max(dxGhist[~np.isnan(dxGhist)])
+    mostneg = np.min(dxGhist[~np.isnan(dxGhist)])
+    max_val =  np.max( [np.abs(mostpos), np.abs(mostneg)] )
+    min_val = -np.max( [np.abs(mostpos), np.abs(mostneg)] )
+
+    imgplot1 = ax1.imshow(dxGhist.T, cmap='bwr', vmax=max_val, vmin=min_val,
+            aspect='equal', origin='lower')
+    draw_cell_borders(ax1, allhist.T)
+
+    # annotations for "diff" and "variance" metrics I've calcualted
+    ax1.annotate(r'diff = {:.2e}'.format(ann_nums[0]),
+            xy=(0.68,0.92), xycoords='axes fraction',
+            fontsize=16, color='black')
+    ax1.annotate(r'var = {:.2e}'.format(ann_nums[1]),
+            xy=(0.68,0.82), xycoords='axes fraction',
+            fontsize=16, color='black')
+
+    # set up colourbar
+    cb1 = fig.colorbar(imgplot1, ax=ax1,
+            fraction=0.12, pad=0.02, aspect=15, shrink=0.9)
+    cb1.set_label(r'$\Delta xG=(xG)_{\text{subset}}-(xG)_{\text{all data}}$',
+            fontsize=18, labelpad=10)
+    cb1.ax.yaxis.set_tick_params(labelsize=14)
+
+    # set up ticks
+    ax1.set_xticks(x_tick_locations)
+    ax1.set_xticklabels(x_tick_labels, fontsize=14)
+    ax1.set_yticks(y_tick_locations)
+    ax1.set_yticklabels(y_tick_labels, fontsize=14)
+
+    # ax1, the lower axis, gets the xlabel
+    ax1.set_xlabel('Distance from the net (feet)', fontsize=16, labelpad=12)
+
+
+    # add a blank axis to wrap whole fig, just to add ylabel to this axis
+    ax = fig.add_subplot(111, frameon=False)
+    ax.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=50)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    if imgstr is None: # plotting the histogram directly to screen
+        plt.show()
+    else: # saving the plot to a file at imgstr
+        plt.savefig(imgstr, bbox_inches='tight')
+        plt.close()
+
+
+def plot_single_histogram(hist, xedges, yedges, allhist, title, iPlot,
+        imgstr=None, ann_nums=None):
+    '''
+    Formats a single 2D histogram plot.
+    '''
+    # Have to check for nans. I have left the NaNs in until just before
+    # plotting on purpose. It is useful to have them around, to remind
+    # myself that there shouldn't be data plotted @ the nan's
+    if(iPlot == 0):# Plotting a value that is not a difference (xG)
+        cmap = 'Greys'
+        max_val = np.max(hist[~np.isnan(hist)])
+        min_val = np.min(hist[~np.isnan(hist)])
+    if(iPlot == 1): # Plotting a value that is a difference (deltaxG)
+        cmap = 'bwr'
+        mostpos = np.max(hist[~np.isnan(hist)])
+        mostneg = np.min(hist[~np.isnan(hist)])
+        max_val =  np.max( [np.abs(mostpos), np.abs(mostneg)] )
+        min_val = -np.max( [np.abs(mostpos), np.abs(mostneg)] )
+
+
+    fig, ax = plt.subplots(1,1, figsize=(9,5), facecolor='w', edgecolor='k')
+    extents = (xedges.min(), xedges.max(),
+            yedges.min(), yedges.max())
+
+    imgplot = ax.imshow(hist.T, cmap=cmap, vmax=max_val, vmin=min_val,
+            aspect='equal', origin='lower')
+
+    draw_cell_borders(ax, allhist.T)
+
+    if(iPlot == 0):
+        ax.annotate(r'$N_{{goals}}$ = {:d}'.format(ann_nums[2]),
+                xy=(0.68,0.92), xycoords='axes fraction',
+                fontsize=16, color='black')
+        ax.annotate(r'$N_{{SAT}}$ = {:d}'.format(ann_nums[3]),
+                xy=(0.68,0.82), xycoords='axes fraction',
+                fontsize=16, color='black')
+        ax.annotate(r'$S\% [frac]$ = {:.3f}'.format(
+                ann_nums[2]/ann_nums[3]),
+                xy=(0.68,0.72), xycoords='axes fraction',
+                fontsize=16, color='black')
+
+
+    if(iPlot == 1):
+        ax.annotate(r'diff = {:.2e}'.format(ann_nums[0]),
+                xy=(0.68,0.92), xycoords='axes fraction',
+                fontsize=16, color='black')
+        ax.annotate(r'var = {:.2e}'.format(ann_nums[1]),
+                xy=(0.68,0.82), xycoords='axes fraction',
+                fontsize=16, color='black')
+
+
+
+    xstep = xedges[1]-xedges[0]
+    x_tick_locations = [i for i in range(1,len(xedges[:-1]),2)]
+    x_tick_labels = [int(xedges[i]+0.5*xstep) for i in x_tick_locations]
+
+    ystep = yedges[1]-yedges[0]
+    y_tick_locations = [i for i in range(len(yedges)-1)]
+    y_tick_labels = [int(yedges[i]+0.5*ystep) for i in y_tick_locations]
+    y_tick_labels[-1] = '>90'
+
+    ax.set_xticks(x_tick_locations)
+    ax.set_xticklabels(x_tick_labels, fontsize=14)
+    ax.set_yticks(y_tick_locations)
+    ax.set_yticklabels(y_tick_labels, fontsize=14)
+
+    ax.set_xlabel('Distance from the net (feet)', fontsize=16, labelpad=12)
+    ax.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=12)
+    ax.set_title(title, fontsize=18, pad=20)
+
+    cb = fig.colorbar(imgplot)
+    cb.set_label(r'$\Delta xG=(xG)_{\text{subset}} - (xG)_{\text{all data}}$',
+            fontsize=18, labelpad=10)
+
+    if imgstr is None: # plotting the histogram directly to screen
+        plt.show()
+    else: # saving the plot to a file at imgstr
+        plt.savefig(imgstr, bbox_inches='tight')
+        plt.close()
+
+
+def draw_cell_borders(ax, hist):
+    '''
+    Draws borders in the 2D hist plots where data will not exist. Occurs for 
+    combinations of distance & angle that area outside the arena.
+
+    The histogram that should be used is the one for all events in the full dataset.
+    '''
+
+    [M,N] = hist.shape
+    lw = 3
+
+    for j in range(N): # along axis 1 in the histogram
+        for i in range(M-1): # through axis 0
+            if(hist[i,j] != 0 and hist[i+1,j] == 0 and i != M-1):
+                ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw) # Draw a line
+            elif(hist[i,j] == 0 and hist[i+1,j] != 0 and i != M-1):
+                ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw)
+
+    for i in range(M): # along axis 0 in the histogram
+        for j in range(N-1): # through axis 1
+            if(hist[i,j] != 0 and hist[i,j+1] == 0 and j != N-1):
+                ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw) # Draw a line
+            elif(hist[i,j] == 0 and hist[i,j+1] != 0 and j != N-1):
+                ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw)
+
+
+
+# -------- Routine for details in drawing hockey rink plots ------------- #
+
+def create_rink(
+    ax, 
+    plot_half = False,
+    board_radius = 28,
+    alpha = 1,
+):
+    '''
+    Plots some lines which correspond to the dimensions & design of an NHL
+    ice hockey rink.
+
+    Taken from https://github.com/gredelsheimer/RandomCode
+    '''
+
+    #Corner Boards
+    ax.add_artist(mpl.patches.Arc((100-board_radius , (85/2)-board_radius),
+        board_radius * 2, board_radius * 2 , theta1=0, theta2=89,
+        edgecolor='Black', lw=4.5,zorder=0, alpha = alpha)) #Top Right
+    ax.add_artist(mpl.patches.Arc((-100+board_radius+.1 , (85/2)-board_radius),
+        board_radius * 2, board_radius * 2 ,theta1=90, theta2=180,
+        edgecolor='Black', lw=4.5,zorder=0, alpha = alpha)) #Top Left
+    ax.add_artist(mpl.patches.Arc((-100+board_radius+.1 , -(85/2)+board_radius-.1),
+        board_radius * 2, board_radius * 2 ,theta1=180, theta2=270,
+        edgecolor='Black', lw=4.5,zorder=0, alpha = alpha)) #Bottom Left
+    ax.add_artist(mpl.patches.Arc((100-board_radius , -(85/2)+board_radius-.1), 
+        board_radius * 2, board_radius * 2 ,theta1=270, theta2=360,
+        edgecolor='Black', lw=4.5,zorder=0, alpha = alpha)) #Bottom Right
+
+    #[x1,x2],[y1,y2]
+    #Plot Boards 
+    ax.plot([-100+board_radius,100-board_radius], [-42.5, -42.5],
+            linewidth=4.5, color="Black",zorder=0, alpha = alpha) #Bottom
+    ax.plot([-100+board_radius-1,100-board_radius+1], [42.5, 42.5],
+            linewidth=4.5, color="Black",zorder=0, alpha = alpha) #Top
+    ax.plot([-100,-100], [-42.5+board_radius, 42.5-board_radius],
+            linewidth=4.5, color="Black",zorder=0, alpha = alpha) #Left
+    ax.plot([100,100], [-42.5+board_radius, 42.5-board_radius],
+            linewidth=4.5, color="Black",zorder=0, alpha = alpha) #Right
+
+    #Goal Lines 
+    adj_top = 5.8
+    adj_bottom = 5.8
+    ax.plot([89,89], [-42.5+adj_bottom, 42.5 - adj_top],
+            linewidth=3, color="Red",zorder=-1, alpha = alpha)
+    ax.plot([-89,-89], [-42.5+adj_bottom, 42.5 - adj_top],
+            linewidth=3, color="Red",zorder=-1, alpha = alpha)
+
+    #Plot Center Line
+    ax.plot([0,0], [-42.5, 42.5], linewidth=3, color="Red",zorder=0, alpha = alpha)
+    ax.plot(0,0, markersize = 6, color="Blue", marker = "o",
+            zorder=0, alpha = alpha) #Center FaceOff Dots
+    ax.add_artist(mpl.patches.Circle((0, 0), radius = 33/2, facecolor='none',
+        edgecolor="Blue", linewidth=3,zorder=0, alpha = alpha)) #Center Circle
+
+    #Zone Faceoff Dots
+    ax.plot(69,22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
+    ax.plot(69,-22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
+    ax.plot(-69,22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
+    ax.plot(-69,-22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
+
+    #Zone Faceoff Circles
+    ax.add_artist(mpl.patches.Circle((69, 22), radius = 15,
+        facecolor='none', edgecolor="Red", linewidth=3,zorder=0, alpha = alpha)) 
+    ax.add_artist(mpl.patches.Circle((69,-22), radius = 15,
+        facecolor='none', edgecolor="Red", linewidth=3,zorder=0, alpha = alpha)) 
+    ax.add_artist(mpl.patches.Circle((-69,22), radius = 15,
+        facecolor='none', edgecolor="Red", linewidth=3,zorder=0, alpha = alpha)) 
+    ax.add_artist(mpl.patches.Circle((-69,-22), radius = 15,
+        facecolor='none', edgecolor="Red", linewidth=3,zorder=0, alpha = alpha)) 
+
+    #Neutral Zone Faceoff Dots
+    ax.plot(22,22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
+    ax.plot(22,-22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
+    ax.plot(-22,22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
+    ax.plot(-22,-22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
+
+    #Plot Blue Lines
+    ax.plot([25,25], [-42.5, 42.5], linewidth=2, color="Blue",zorder=0, alpha = alpha)
+    ax.plot([-25,-25], [-42.5, 42.5], linewidth=2, color="Blue",zorder=0, alpha = alpha)
+
+    #Goalie Crease
+    ax.add_artist(mpl.patches.Arc((89, 0), 8,8,theta1=90, theta2=270,
+        facecolor="Blue", edgecolor='Red', lw=2,zorder=0, alpha = alpha))
+    ax.add_artist(mpl.patches.Arc((-89, 0), 8,8, theta1=270, theta2=90,
+        facecolor="Blue", edgecolor='Red', lw=2,zorder=0, alpha = alpha))
+
+    #Goal
+    ax.add_artist(mpl.patches.Rectangle((89, 0 - (6/2)), 40/12, 6,
+        lw=2, color='Red',fill=False,zorder=0, alpha = alpha))
+    ax.add_artist(mpl.patches.Rectangle((-89 - 2, 0 - (6/2)), 40/12, 6,
+        lw=2, color='Red',fill=False,zorder=0, alpha = alpha))
+
+    if plot_half == False:
+        # Set axis limits
+        ax.set_xlim(-101, 101)
+        ax.set_ylim(-43, 43)  
+
+    elif plot_half == True:
+        # Set axis limits
+        ax.set_xlim(-0.5, 100.5)
+        ax.set_ylim(-43, 43) 
+
+
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+
+
+def draw_hist_bins_on_rink(ax, r_bins, theta_bins,
         lw=1.5, ls='--', alpha=0.5, zorder=-10):
     '''
-    Adds lines representing the distance-angle bins used
+    Adds lines to the rink representing the distance-angle bins used
     in the 2D histograms.
 
     theta_bins must be in degrees, and have no number larger than 90.
@@ -236,7 +564,6 @@ def draw_hist_bins(ax, r_bins, theta_bins,
                 theta1=angle1, theta2=angle2, angle=180,
                 edgecolor='Black', lw=lw, ls=ls,
                 alpha=alpha, zorder=zorder))
-
 
 
         # arc intersects both side boards
@@ -367,322 +694,75 @@ def draw_hist_bins(ax, r_bins, theta_bins,
                     alpha=alpha, zorder=zorder)
 
 
-def plot_xG_deltaxG(xGhist, dxGhist, xedges, yedges, allhist, title, iPlot,
-        imgstr=None, ann_nums=None):
-    '''
-    Formats the 2D histogram plots.
-    '''
-    # Have to check for nans. I am leaving the NaNs in until just before
-    # plotting on purpose. It is useful to have them around to easily cut
-    # out data.
-    if(iPlot == 0):# Plotting a value that is not a difference
-        cmap = 'Greys'
-        max_val = np.max(dxGhist[~np.isnan(dxGhist)])
-        min_val = np.min(dxGhist[~np.isnan(dxGhist)])
-    if(iPlot == 1): # Plotting a value that is a difference
-        cmap = 'bwr'
-        mostpos = np.max(dxGhist[~np.isnan(dxGhist)])
-        mostneg = np.min(dxGhist[~np.isnan(dxGhist)])
-        max_val =  np.max( [np.abs(mostpos), np.abs(mostneg)] )
-        min_val = -np.max( [np.abs(mostpos), np.abs(mostneg)] )
+# ---------------------- Scatter plots ------------------------------- #
 
+def conditions_plot(conds, condvals, xdata, ydata, yavg,
+        title='', imgstr=None):
+    """
+    A scatter plot exploring summarized metrics to compare how
+    subsets of data compare to the full data set.
+    """
 
-    fig, [ax0, ax1] = plt.subplots(2,1, figsize=(9,9), #sharex=True,
-            facecolor='w', edgecolor='k')#, tight_layout=True)
-    plt.subplots_adjust(hspace=0.05)
-    
-    extents = (xedges.min(), xedges.max(),
-            yedges.min(), yedges.max())
+    fig, ax = plt.subplots(1,1, figsize=(9,6),
+            facecolor='w', edgecolor='k')
 
+    xmin = -0.065; xmax = 0.082;
+    ymin = -0.04 ; ymax = 0.12 ;
 
-    imgplot0 = ax0.imshow(xGhist.T, cmap='Greys',
-            #vmax=max_val, vmin=min_val,
-            aspect='equal', origin='lower')
+    # Horizontal & vertical lines through (0,0)
+    ax.plot([xmin, xmax], [0.0  , 0.0  ], 'k--', alpha=0.3)
+    ax.plot([0.0 , 0.0 ], [ymin , ymax ], 'k--', alpha=0.3)
 
-    cb0 = fig.colorbar(imgplot0, ax=ax0,
-            fraction=0.12, pad=0.02, aspect=15, shrink=0.9)
-    cb0.set_label(r'$xG=n_{{goals}}/n_{{all events}}$',
-            fontsize=18, labelpad=10)
-    cb0.ax.yaxis.set_tick_params(labelsize=14)
+    # Different conditions, e.g. shot type, team strength are in conds
+    for i in range(len(conds)):
+        ydata[i] -= yavg # subtract off an average from the ydata set
 
+        # plot the data points
+        # xdata[i] and ydata[i] are each 1D arrays
+        ax.plot(xdata[i], ydata[i], '.')
 
-    imgplot1 = ax1.imshow(dxGhist.T, cmap=cmap, vmax=max_val, vmin=min_val,
-            aspect='equal', origin='lower')
+        cond = conds[i];
+        for anni in range(len(xdata[i])):
+            val = condvals[i][anni] # Each value for each condition
 
-    if(iPlot == 1):
-        ax1.annotate(r'diff = {:.2e}'.format(ann_nums[0]),
-                xy=(0.68,0.92), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax1.annotate(r'var = {:.2e}'.format(ann_nums[1]),
-                xy=(0.68,0.82), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax0.annotate(r'$N_{{goals}}$ = {:d}'.format(ann_nums[2]),
-                xy=(0.68,0.92), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax0.annotate(r'$N_{{shots}}$ = {:d}'.format(ann_nums[3]),
-                xy=(0.68,0.82), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax0.annotate(r'$S\% [frac]$ = {:.3f}'.format(
-                ann_nums[2]/ann_nums[3]),
-                xy=(0.68,0.72), xycoords='axes fraction',
-                fontsize=16, color='black')
+            # x,y co-ordinates for annotating text
+            annx = xdata[i][anni]+0.0007
+            anny = ydata[i][anni]+0.0007
 
-    draw_cell_borders(ax0, allhist.T)
-    draw_cell_borders(ax1, allhist.T)
+            # Manual shifts to avoid overlapping text
+            if(cond=='type' and val=='TIP'):
+                annx -= 0.0122
+                anny -= 0.0056
+            if(cond=='PlayingStrength' and val=='5v3'):
+                annx -= 0.028
+                anny -= 0.0
 
-    xstep = xedges[1]-xedges[0]
-    x_tick_locations = [i for i in range(1,len(xedges[:-1]),2)]
-    x_tick_labels = [int(xedges[i]+0.5*xstep) for i in x_tick_locations]
+            ax.annotate( str(conds[i])+':'+str(condvals[i][anni]),
+                xy=(annx, anny), xycoords='data',
+                fontsize=12, color='black')
 
-    ystep = yedges[1]-yedges[0]
-    y_tick_locations = [i for i in range(len(yedges)-1)]
-    y_tick_labels = [int(yedges[i]+0.5*ystep) for i in y_tick_locations]
-    y_tick_labels[-1] = '>90'
+    #ax.set_yscale('log')
 
-    ax0.set_xticks([])
-    #ax0xticks = ax0.xaxis.get_major_ticks().set_xticks([])
-    ax0.set_yticks(y_tick_locations)
-    ax0.set_yticklabels(y_tick_labels, fontsize=14)
-    #ax0.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=12)
-    ax0.set_title(title, fontsize=18, pad=20)
-
-    ax1.set_xticks(x_tick_locations)
-    ax1.set_xticklabels(x_tick_labels, fontsize=14)
-    ax1.set_yticks(y_tick_locations)
-    ax1.set_yticklabels(y_tick_labels, fontsize=14)
-
-    ax1.set_xlabel('Distance from the net (feet)', fontsize=16, labelpad=12)
-
-    cb1 = fig.colorbar(imgplot1, ax=ax1,
-            fraction=0.12, pad=0.02, aspect=15, shrink=0.9)
-    cb1.set_label(r'$\Delta xG=(xG)_{\text{subset}} - (xG)_{\text{all data}}$',
-            fontsize=18, labelpad=10)
-    cb1.ax.yaxis.set_tick_params(labelsize=14)
-
-
-    ax = fig.add_subplot(111, frameon=False)
-    ax.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=50)
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-    if imgstr is None: # plotting the histogram directly
-        plt.show()
-    else: # saving the plot to a file at imgstr
-        plt.savefig(imgstr, bbox_inches='tight')
-        plt.close()
-
-
-def plot_event_histogram(hist, xedges, yedges, allhist, title, iPlot,
-        imgstr=None, ann_nums=None):
-    '''
-    Formats the 2D histogram plots.
-    '''
-    # Have to check for nans. I am leaving the NaNs in until just before
-    # plotting on purpose. It is useful to have them around to easily cut
-    # out data.
-    if(iPlot == 0):# Plotting a value that is not a difference
-        cmap = 'Greys'
-        max_val = np.max(hist[~np.isnan(hist)])
-        min_val = np.min(hist[~np.isnan(hist)])
-    if(iPlot == 1): # Plotting a value that is a difference
-        cmap = 'bwr'
-        mostpos = np.max(hist[~np.isnan(hist)])
-        mostneg = np.min(hist[~np.isnan(hist)])
-        max_val =  np.max( [np.abs(mostpos), np.abs(mostneg)] )
-        min_val = -np.max( [np.abs(mostpos), np.abs(mostneg)] )
-
-
-    fig, ax = plt.subplots(1,1, figsize=(12,6), facecolor='w', edgecolor='k')
-    extents = (xedges.min(), xedges.max(),
-            yedges.min(), yedges.max())
-    imgplot = ax.imshow(hist.T, cmap=cmap, vmax=max_val, vmin=min_val,
-            aspect='equal', origin='lower')
-
-    if(iPlot == 1):
-        ax.annotate(r'diff = {:.2e}'.format(ann_nums[0]),
-                xy=(0.75,0.92), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax.annotate(r'var = {:.2e}'.format(ann_nums[1]),
-                xy=(0.75,0.82), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax.annotate(r'$N_{{goals}}$ = {:d}'.format(ann_nums[2]),
-                xy=(0.75,0.72), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax.annotate(r'$N_{{shots}}$ = {:d}'.format(ann_nums[3]),
-                xy=(0.75,0.62), xycoords='axes fraction',
-                fontsize=16, color='black')
-
-
-    draw_cell_borders(ax, allhist.T)
-
-    xstep = xedges[1]-xedges[0]
-    x_tick_locations = [i for i in range(1,len(xedges[:-1]),2)]
-    x_tick_labels = [int(xedges[i]+0.5*xstep) for i in x_tick_locations]
-
-    ystep = yedges[1]-yedges[0]
-    y_tick_locations = [i for i in range(len(yedges)-1)]
-    y_tick_labels = [int(yedges[i]+0.5*ystep) for i in y_tick_locations]
-    y_tick_labels[-1] = '>90'
-
-    ax.set_xticks(x_tick_locations)
-    ax.set_xticklabels(x_tick_labels, fontsize=14)
-    ax.set_yticks(y_tick_locations)
-    ax.set_yticklabels(y_tick_labels, fontsize=14)
-
-    ax.set_xlabel('Distance from the net (feet)', fontsize=16, labelpad=12)
-    ax.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=12)
+    ax.set_xlabel(r'Weighted $\Delta$xG', fontsize=16, labelpad=12)
+    ax.set_ylabel(r'$S\%_{{subset}}-S\%_{{all}}$',
+            fontsize=16, labelpad=12)
     ax.set_title(title, fontsize=18, pad=20)
-
-    cb = fig.colorbar(imgplot)
-    cb.set_label(r'$\Delta xG=(xG)_{\text{subset}} - (xG)_{\text{all data}}$',
-            fontsize=18, labelpad=10)
+    
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
 
     if imgstr is None: # plotting the histogram directly
         plt.show()
+        #plt.close()
     else: # saving the plot to a file at imgstr
         plt.savefig(imgstr, bbox_inches='tight')
         plt.close()
 
 
-def draw_cell_borders(ax, hist):
-    '''
-    Draws borders in the 2D hist plots where data will not exist. Occurs for 
-    combinations of distance & angle that area outside the arena.
 
-    The histogram that should be used is the one for all events in the full dataset.
-    '''
+# ---------------------- Book-keeping dictionaries ----------------- #
 
-    [M,N] = hist.shape
-    lw = 3
-
-    for j in range(N): # along axis 1 in the histogram
-        for i in range(M-1): # through axis 0
-            if(hist[i,j] != 0 and hist[i+1,j] == 0 and i != M-1):
-                ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw) # Draw a line
-            elif(hist[i,j] == 0 and hist[i+1,j] != 0 and i != M-1):
-                ax.plot([j-0.5,j+0.5],[i+0.5,i+0.5],'k-', lw=lw)
-
-    for i in range(M): # along axis 0 in the histogram
-        for j in range(N-1): # through axis 1
-            if(hist[i,j] != 0 and hist[i,j+1] == 0 and j != N-1):
-                ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw) # Draw a line
-            elif(hist[i,j] == 0 and hist[i,j+1] != 0 and j != N-1):
-                ax.plot([j+0.5,j+0.5],[i-0.5,i+0.5],'k-', lw=lw)
-
-# ---------------------- Routine for drawing a hockey rink ------------- #
-
-def create_rink(
-    ax, 
-    plot_half = False,
-    board_radius = 28,
-    alpha = 1,
-):
-    '''
-    Plots some lines which correspond to the dimensions & design of an NHL
-    ice hockey rink.
-
-    Taken from https://github.com/gredelsheimer/RandomCode
-    '''
-
-    #Corner Boards
-    ax.add_artist(mpl.patches.Arc((100-board_radius , (85/2)-board_radius),
-        board_radius * 2, board_radius * 2 , theta1=0, theta2=89,
-        edgecolor='Black', lw=4.5,zorder=0, alpha = alpha)) #Top Right
-    ax.add_artist(mpl.patches.Arc((-100+board_radius+.1 , (85/2)-board_radius),
-        board_radius * 2, board_radius * 2 ,theta1=90, theta2=180,
-        edgecolor='Black', lw=4.5,zorder=0, alpha = alpha)) #Top Left
-    ax.add_artist(mpl.patches.Arc((-100+board_radius+.1 , -(85/2)+board_radius-.1),
-        board_radius * 2, board_radius * 2 ,theta1=180, theta2=270,
-        edgecolor='Black', lw=4.5,zorder=0, alpha = alpha)) #Bottom Left
-    ax.add_artist(mpl.patches.Arc((100-board_radius , -(85/2)+board_radius-.1), 
-        board_radius * 2, board_radius * 2 ,theta1=270, theta2=360,
-        edgecolor='Black', lw=4.5,zorder=0, alpha = alpha)) #Bottom Right
-
-    #[x1,x2],[y1,y2]
-    #Plot Boards 
-    ax.plot([-100+board_radius,100-board_radius], [-42.5, -42.5],
-            linewidth=4.5, color="Black",zorder=0, alpha = alpha) #Bottom
-    ax.plot([-100+board_radius-1,100-board_radius+1], [42.5, 42.5],
-            linewidth=4.5, color="Black",zorder=0, alpha = alpha) #Top
-    ax.plot([-100,-100], [-42.5+board_radius, 42.5-board_radius],
-            linewidth=4.5, color="Black",zorder=0, alpha = alpha) #Left
-    ax.plot([100,100], [-42.5+board_radius, 42.5-board_radius],
-            linewidth=4.5, color="Black",zorder=0, alpha = alpha) #Right
-
-    #Goal Lines 
-    adj_top = 5.8
-    adj_bottom = 5.8
-    ax.plot([89,89], [-42.5+adj_bottom, 42.5 - adj_top],
-            linewidth=3, color="Red",zorder=-1, alpha = alpha)
-    ax.plot([-89,-89], [-42.5+adj_bottom, 42.5 - adj_top],
-            linewidth=3, color="Red",zorder=-1, alpha = alpha)
-
-    #Plot Center Line
-    ax.plot([0,0], [-42.5, 42.5], linewidth=3, color="Red",zorder=0, alpha = alpha)
-    ax.plot(0,0, markersize = 6, color="Blue", marker = "o",
-            zorder=0, alpha = alpha) #Center FaceOff Dots
-    ax.add_artist(mpl.patches.Circle((0, 0), radius = 33/2, facecolor='none',
-        edgecolor="Blue", linewidth=3,zorder=0, alpha = alpha)) #Center Circle
-
-    #Zone Faceoff Dots
-    ax.plot(69,22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
-    ax.plot(69,-22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
-    ax.plot(-69,22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
-    ax.plot(-69,-22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
-
-    #Zone Faceoff Circles
-    ax.add_artist(mpl.patches.Circle((69, 22), radius = 15,
-        facecolor='none', edgecolor="Red", linewidth=3,zorder=0, alpha = alpha)) 
-    ax.add_artist(mpl.patches.Circle((69,-22), radius = 15,
-        facecolor='none', edgecolor="Red", linewidth=3,zorder=0, alpha = alpha)) 
-    ax.add_artist(mpl.patches.Circle((-69,22), radius = 15,
-        facecolor='none', edgecolor="Red", linewidth=3,zorder=0, alpha = alpha)) 
-    ax.add_artist(mpl.patches.Circle((-69,-22), radius = 15,
-        facecolor='none', edgecolor="Red", linewidth=3,zorder=0, alpha = alpha)) 
-
-    #Neutral Zone Faceoff Dots
-    ax.plot(22,22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
-    ax.plot(22,-22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
-    ax.plot(-22,22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
-    ax.plot(-22,-22, markersize = 6, color="Red", marker = "o",zorder=0, alpha = alpha)
-
-    #Plot Blue Lines
-    ax.plot([25,25], [-42.5, 42.5], linewidth=2, color="Blue",zorder=0, alpha = alpha)
-    ax.plot([-25,-25], [-42.5, 42.5], linewidth=2, color="Blue",zorder=0, alpha = alpha)
-
-    #Goalie Crease
-    ax.add_artist(mpl.patches.Arc((89, 0), 8,8,theta1=90, theta2=270,
-        facecolor="Blue", edgecolor='Red', lw=2,zorder=0, alpha = alpha))
-    ax.add_artist(mpl.patches.Arc((-89, 0), 8,8, theta1=270, theta2=90,
-        facecolor="Blue", edgecolor='Red', lw=2,zorder=0, alpha = alpha))
-
-    #Goal
-    ax.add_artist(mpl.patches.Rectangle((89, 0 - (6/2)), 40/12, 6,
-        lw=2, color='Red',fill=False,zorder=0, alpha = alpha))
-    ax.add_artist(mpl.patches.Rectangle((-89 - 2, 0 - (6/2)), 40/12, 6,
-        lw=2, color='Red',fill=False,zorder=0, alpha = alpha))
-
-    if plot_half == False:
-        # Set axis limits
-        ax.set_xlim(-101, 101)
-        ax.set_ylim(-43, 43)  
-
-    elif plot_half == True:
-        # Set axis limits
-        ax.set_xlim(-0.5, 100.5)
-        ax.set_ylim(-43, 43) 
-
-
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-
-
-
-# ---------------------- Book-keeping Dictionaries ----------------- #
-
-# For titles for the Delta xG histogram plots
+# For plot titles for the various conditions
 
 titledict = {
         'bReb-0':r"non-rebound shots",
