@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotting_routines as pr
 import sys
+import pathlib
 
 # ---------------------- Routine for selecting data ---------------------- #
 
@@ -308,7 +309,28 @@ def clean_data(outfilename,
     df.to_csv(outfilename, index=False)
 
 
+# ---------------------- Filesystem management ---------------------- #
 
+def check_and_make_subdirs(topdir, subdirs, bDoPrints=False):
+    '''
+    Create directories if they do not already exist.
+    '''
+
+    if (bDoPrints):
+        print('\nChecking output directories:')
+
+    for subdir in subdirs:
+        dirpath = topdir + subdir
+        try: # Create directory if it does not exist
+            path = pathlib.Path(dirpath)
+            path.mkdir(parents=True)
+            if (bDoPrints):
+                print(f'Directory path {dirpath} created.')
+        except FileExistsError:
+            # Can let the user know the path already exists
+            # (parent script execution is not terminated)
+            if (bDoPrints):
+                print(f'Directory path {dirpath} already exists.')
 
 
 # --------------------- Spare code ------------------------------------ #

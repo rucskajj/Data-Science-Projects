@@ -696,7 +696,7 @@ def draw_hist_bins_on_rink(ax, r_bins, theta_bins,
 
 # ---------------------- Scatter plots ------------------------------- #
 
-def conditions_plot(conds, condvals, xdata, ydata, yavg,
+def conditions_plot(conds, condvals, xdata, ydata, yavg, iPlot,
         title='', imgstr=None):
     """
     A scatter plot exploring summarized metrics to compare how
@@ -729,13 +729,14 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg,
             annx = xdata[i][anni]+0.0007
             anny = ydata[i][anni]+0.0007
 
-            # Manual shifts to avoid overlapping text
-            if(cond=='type' and val=='TIP'):
-                annx -= 0.0122
-                anny -= 0.0056
-            if(cond=='PlayingStrength' and val=='5v3'):
-                annx -= 0.028
-                anny -= 0.0
+            if(iPlot == 1): # Analysis #1
+                # Manual shifts to avoid overlapping text
+                if(cond=='type' and val=='TIP'):
+                    annx -= 0.0122
+                    anny -= 0.0056
+                if(cond=='PlayingStrength' and val=='5v3'):
+                    annx -= 0.028
+                    anny -= 0.0
 
             ax.annotate( str(conds[i])+':'+str(condvals[i][anni]),
                 xy=(annx, anny), xycoords='data',

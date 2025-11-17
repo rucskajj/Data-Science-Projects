@@ -79,6 +79,8 @@ def calculate_xG_diffvardelta(xG1, a1, xG0):
 
     return weighted_diff, variance, deltaxG
 
+
+
 def calculate_all_hists(df, dist_edges, dist_step, angl_step, iPrints):
     '''
     Calculates 2D histograms of the shot location data within the
@@ -117,8 +119,12 @@ def calculate_all_hists(df, dist_edges, dist_step, angl_step, iPrints):
     angl_edges_g90 = np.linspace(90+angl_step, 180, Nstep_g90)
 
     if(bDevPrints):
+        print('number of bins in <90 angle hist and >90 angle hist')
         print(Nstep_l90, Nstep_g90)
-        print(dist_edges, angl_edges_l90, angl_edges_g90, dist_step, angl_step)
+        print('distance bin edges; angle edges < 90; angle edges > 90')
+        print(dist_edges, angl_edges_l90, angl_edges_g90)
+        print('step in distance and angle bins')
+        print(dist_step, angl_step)
 
 
     # --------- Calculate histograms ---------------------------------------- #
@@ -146,6 +152,8 @@ def calculate_all_hists(df, dist_edges, dist_step, angl_step, iPrints):
         bDevPlots, bDevPrints)
 
     return hist_shots, hist_misses, hist_goals, hist_all, angl_edges_l90
+
+
 
 def calculate_single_hist(df, eventlist,
     dist_edges, dist_step, angl_edges_l90, angl_edges_g90,
@@ -199,18 +207,16 @@ def calculate_single_hist(df, eventlist,
     col0data = np.copy(hist_l90[0,:])
     hist_l90[0,:] += hist_l90[1,:]
     hist_l90[1,:] += col0data
-    # I am effectively givin the first two columns (first two r_bins) the same
-    # values, for aesthetic purposes in the final histogram. There is not a
-    # lot of data in the first distance bin, but there is some.
+    # I am effectively giving the first two columns (first two r_bins)
+    # the same values, for aesthetic purposes in the final histogram.
 
     [M,N] = hist_l90.shape
     # sum over only part of the hist, since the first two columns duplicate data
     sumcheck2 = int(np.sum(hist_l90[1:M,:])) 
     if(bDevPrints):
-        print(f'Total counts in the histogram, checked two times:\
-                {sumcheck1}, {sumcheck2}')
-        print(f'Total number of entries in the original dataframe:\
-                {len(subdf_l90.index)+len(subdf_g90.index)}')
+        print('\nFor eventlist:', eventlist)
+        print(f'Total counts in the histogram, checked two ways: \t\t{sumcheck1}, {sumcheck2}')
+        print(f'Total number of entries in the original dataframe, checked two ways: \t{len(df.index)}, {len(subdf_l90.index)+len(subdf_g90.index)}')
 
     if(bDevPlots):
         fig, ax = plt.subplots(1,1, facecolor='w', edgecolor='k')
