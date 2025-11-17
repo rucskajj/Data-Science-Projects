@@ -801,6 +801,10 @@ titledict = {
         'bPlayoffs-1':r"playoff games",
         'bForwardPlayer-0':r"shots taken by defence",
         'bForwardPlayer-1':r"shots taken by forwards",
+
+        'bOffWing-0':r"shots from strong side",
+        'bOffWing-1':r"shot from off wing",
+
         'anglesign-1' :r"shots from the goalie's left",
         'anglesign--1':r"shots from the goalie's right",
 

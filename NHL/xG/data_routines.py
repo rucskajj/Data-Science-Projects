@@ -66,6 +66,7 @@ def select_data(filepref, inputfile_yearlist,
         'playerPositionThatDidEvent',
         'shotOnEmptyNet',
         'shotRebound',
+        'offWing',
         'shotGeneratedRebound',
         'shotType',
         'xGoal',
@@ -86,6 +87,7 @@ def select_data(filepref, inputfile_yearlist,
         'shootingTeamForwardsOnIce':'nsFor',
         'playerPositionThatDidEvent':'playerPos',
         'shotRebound':'bReb',
+        'offWing':'bOffWing',
         'shotGeneratedRebound':'bGenReb',
         'shotType':'type',
         'xGoal':'MP_xG',
@@ -150,6 +152,7 @@ def select_data(filepref, inputfile_yearlist,
     subdf['angle'] = np.arctan2((subdf['y']-centre_net_y),
             -1.0*(subdf['x']-centre_net_x))*(180/np.pi)
 
+   
     # Take the absolute value of angle, but record which records have
     # a negative angle
     subdf['anglesign'] = np.ones(len(subdf.index), dtype=int)
@@ -225,6 +228,11 @@ def clean_data(outfilename,
     df_Nzone = df[df['x'] < 25]
     df = df.drop(df_Nzone.index)
 
+    # Some wrap arounds were apparently recorded from well beyond the crease
+    df_badwraps = df[
+            (df['type'].isin(['WRAP'])) &
+            (df['distance'] > 12)]
+    df = df.drop(df_badwraps.index)
 
     # Drop the shots recorded from inside the net
     df_innet = df[
@@ -276,6 +284,7 @@ def clean_data(outfilename,
     print(f'- {len(df_Nzone.index)} from inside the neutral zone.')
     print(f'- {len(df_oc_py.index)} from outside the pos-y corner.')
     print(f'- {len(df_oc_ny.index)} from outside the neg-y corner.\n')
+    print(f'- {len(df_badwraps.index)} long distance wrap arounds.\n')
 
     print(f'{len(df.index)} shots left in the data set.\n\n')
 

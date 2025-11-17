@@ -83,7 +83,7 @@ print(f'\nPlots are output to {images_directory}')
 # Choose which columns to make histograms for
 #condition_list = ['bReb']
 condition_list = ['bReb', 'type', 'bPlayoffs', 'bForwardPlayer',
-        'PlayingStrength', 'anglesign']
+        'PlayingStrength', 'anglesign', 'bOffWing']
 condition_values = {}
 for cond in condition_list:
     condition_values[cond] = df[cond].unique()
