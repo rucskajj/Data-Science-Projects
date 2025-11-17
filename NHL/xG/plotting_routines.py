@@ -6,61 +6,81 @@ from scipy import optimize
 
 # ---------------------- Routine for plots with histograms ------------- #
 
-def make_all_ctr_hist_plots(subdf, titledict, imgdir,
-        column, column_value,
+def make_all_ctr_hist_plots(df, imgdir,
         hist_SAT, hist_shots, hist_misses, hist_goals,
-        dist_edges, angle_edges, hist0_SAT):
+        dist_edges, angle_edges, hist0_SAT,
+        titledict=None, column=None, column_value=None):
     '''
     A routine that calls the plot_hist_with_heatmap routine for the
     various events: SOG, misses, goals, SAT.
     '''
 
     # SAT: shot attempts = SOG + miss + goal
-    plttitle = r"Distribution of all SAT for " +\
+    if titledict is not None:
+        plttitle = r"Distribution of SAT for " +\
             titledict[column+'-'+str(column_value)]
-    imgstr = imgdir + column + '-' + str(column_value) +\
+        imgstr = imgdir + column + '-' + str(column_value) +\
             '-SAT.png'
-    histdf = subdf.loc[subdf['event'].isin(['SHOT', 'MISS','GOAL'])]
-    
+    else:
+        plttitle = r"Distribution of SAT for reference dataset"
+        imgstr = imgdir + 'ref-SAT.png'
+
+    histdf = df.loc[df['event'].isin(['SHOT', 'MISS','GOAL'])]
+    Nevents = len(histdf.index)
     plot_hist_with_heatmap(hist_SAT,
             dist_edges, angle_edges, hist0_SAT, plttitle,
-            histdf['x'].values, histdf['y'].values,
+            histdf['x'].values, histdf['y'].values, Nevents,
             imgstr=imgstr)
 
 
     # SOG: shots on goal
-    plttitle = r"Distribution of SOG for " +\
+    if titledict is not None:
+        plttitle = r"Distribution of SOG for " +\
             titledict[column+'-'+str(column_value)]
-    imgstr = imgdir + column + '-' + str(column_value) + '-SOG.png'
-    histdf = subdf.loc[subdf['event'].isin(['SHOT'])]
-    
+        imgstr = imgdir + column + '-' + str(column_value) + '-SOG.png'
+    else:
+        plttitle = r"Distribution of SOG for reference dataset"
+        imgstr = imgdir + 'ref-SOG.png'
+
+    histdf = df.loc[df['event'].isin(['SHOT'])]
+    Nevents = len(histdf.index)
     plot_hist_with_heatmap(hist_shots,
             dist_edges, angle_edges, hist0_SAT, plttitle,
-            histdf['x'].values, histdf['y'].values,
+            histdf['x'].values, histdf['y'].values, Nevents,
             imgstr=imgstr)
 
 
     # Miss: shots that missed the net
-    plttitle = r"Distribution of misses for " +\
+    if titledict is not None:
+        plttitle = r"Distribution of misses for " +\
             titledict[column+'-'+str(column_value)]
-    imgstr = imgdir + column + '-' + str(column_value) + '-miss.png'
-    histdf = subdf.loc[subdf['event'].isin(['MISS'])]
-    
+        imgstr = imgdir + column + '-' + str(column_value) + '-miss.png'
+    else:
+        plttitle = r"Distribution of misses for reference dataset"
+        imgstr = imgdir + 'ref-misses.png'
+
+    histdf = df.loc[df['event'].isin(['MISS'])]
+    Nevents = len(histdf.index)
     plot_hist_with_heatmap(hist_misses,
             dist_edges, angle_edges, hist0_SAT, plttitle,
-            histdf['x'].values, histdf['y'].values,
+            histdf['x'].values, histdf['y'].values, Nevents,
             imgstr=imgstr)
 
 
     # shots resulting in a goal
-    plttitle = r"Distribution of goals for " +\
+    if titledict is not None:
+        plttitle = r"Distribution of goals for " +\
             titledict[column+'-'+str(column_value)]
-    imgstr = imgdir + column + '-' + str(column_value) + '-goal.png'
-    histdf = subdf.loc[subdf['event'].isin(['GOAL'])]
-    
+        imgstr = imgdir + column + '-' + str(column_value) + '-goal.png'
+    else:
+        plttitle = r"Distribution of goals for reference dataset"
+        imgstr = imgdir + 'ref-goals.png'
+
+    histdf = df.loc[df['event'].isin(['GOAL'])]
+    Nevents = len(histdf.index)
     plot_hist_with_heatmap(hist_goals,
             dist_edges, angle_edges, hist0_SAT, plttitle,
-            histdf['x'].values, histdf['y'].values,
+            histdf['x'].values, histdf['y'].values, Nevents,
             imgstr=imgstr)
 
 
@@ -71,7 +91,7 @@ def make_all_ctr_hist_plots(subdf, titledict, imgdir,
 def plot_hist_with_heatmap(hist, xedges1, yedges1,
         allhist, title,
         xdata, ydata,
-        imgstr=None):
+        Nann, imgstr=None):
     '''
     Formats the 2D histogram plots.
     '''
@@ -151,6 +171,10 @@ def plot_hist_with_heatmap(hist, xedges1, yedges1,
             aspect='equal', origin='lower')
     draw_cell_borders(ax1, allhist.T)
 
+    ax1.annotate(r'N = {:d}'.format(Nann),
+            xy=(0.72,0.92), xycoords='axes fraction',
+            fontsize=16, color='black')
+
     xstep = xedges1[1]-xedges1[0]
     x_tick_locations = [i for i in range(1,len(xedges1[:-1]),2)]
     x_tick_labels = [int(xedges1[i]+0.5*xstep) for i in x_tick_locations]
@@ -228,7 +252,7 @@ def plot_xG_deltaxG(xGhist, dxGhist, xedges, yedges, allhist, title,
     # set up colourbar
     cb0 = fig.colorbar(imgplot0, ax=ax0,
             fraction=0.12, pad=0.02, aspect=15, shrink=0.9)
-    cb0.set_label(r'$xG=n_{{goals}}/n_{{all events}}$',
+    cb0.set_label(r'$xG=n_{{goals}}/n_{{SAT}}$',
             fontsize=18, labelpad=10)
     cb0.ax.yaxis.set_tick_params(labelsize=14)
 
@@ -292,27 +316,22 @@ def plot_xG_deltaxG(xGhist, dxGhist, xedges, yedges, allhist, title,
         plt.close()
 
 
-def plot_single_histogram(hist, xedges, yedges, allhist, title, iPlot,
-        imgstr=None, ann_nums=None):
+def plot_single_histogram(hist, xedges, yedges, allhist, title, ann_nums,
+        imgstr=None):
     '''
     Formats a single 2D histogram plot.
     '''
     # Have to check for nans. I have left the NaNs in until just before
     # plotting on purpose. It is useful to have them around, to remind
     # myself that there shouldn't be data plotted @ the nan's
-    if(iPlot == 0):# Plotting a value that is not a difference (xG)
-        cmap = 'Greys'
-        max_val = np.max(hist[~np.isnan(hist)])
-        min_val = np.min(hist[~np.isnan(hist)])
-    if(iPlot == 1): # Plotting a value that is a difference (deltaxG)
-        cmap = 'bwr'
-        mostpos = np.max(hist[~np.isnan(hist)])
-        mostneg = np.min(hist[~np.isnan(hist)])
-        max_val =  np.max( [np.abs(mostpos), np.abs(mostneg)] )
-        min_val = -np.max( [np.abs(mostpos), np.abs(mostneg)] )
+
+    cmap = 'Greys'
+    max_val = np.max(hist[~np.isnan(hist)])
+    min_val = np.min(hist[~np.isnan(hist)])
 
 
-    fig, ax = plt.subplots(1,1, figsize=(9,5), facecolor='w', edgecolor='k')
+    fig, ax = plt.subplots(1,1, figsize=(11,5),
+            facecolor='w', edgecolor='k')
     extents = (xedges.min(), xedges.max(),
             yedges.min(), yedges.max())
 
@@ -321,27 +340,16 @@ def plot_single_histogram(hist, xedges, yedges, allhist, title, iPlot,
 
     draw_cell_borders(ax, allhist.T)
 
-    if(iPlot == 0):
-        ax.annotate(r'$N_{{goals}}$ = {:d}'.format(ann_nums[2]),
-                xy=(0.68,0.92), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax.annotate(r'$N_{{SAT}}$ = {:d}'.format(ann_nums[3]),
-                xy=(0.68,0.82), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax.annotate(r'$S\% [frac]$ = {:.3f}'.format(
-                ann_nums[2]/ann_nums[3]),
-                xy=(0.68,0.72), xycoords='axes fraction',
-                fontsize=16, color='black')
-
-
-    if(iPlot == 1):
-        ax.annotate(r'diff = {:.2e}'.format(ann_nums[0]),
-                xy=(0.68,0.92), xycoords='axes fraction',
-                fontsize=16, color='black')
-        ax.annotate(r'var = {:.2e}'.format(ann_nums[1]),
-                xy=(0.68,0.82), xycoords='axes fraction',
-                fontsize=16, color='black')
-
+    ax.annotate(r'$N_{{goals}}$ = {:d}'.format(ann_nums[0]),
+            xy=(0.72,0.92), xycoords='axes fraction',
+            fontsize=16, color='black')
+    ax.annotate(r'$N_{{SAT}}$ = {:d}'.format(ann_nums[1]),
+            xy=(0.72,0.82), xycoords='axes fraction',
+            fontsize=16, color='black')
+    ax.annotate(r'$S\% [frac]$ = {:.3f}'.format(
+            ann_nums[0]/ann_nums[1]),
+            xy=(0.72,0.72), xycoords='axes fraction',
+            fontsize=16, color='black')
 
 
     xstep = xedges[1]-xedges[0]
@@ -362,9 +370,14 @@ def plot_single_histogram(hist, xedges, yedges, allhist, title, iPlot,
     ax.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=12)
     ax.set_title(title, fontsize=18, pad=20)
 
-    cb = fig.colorbar(imgplot)
-    cb.set_label(r'$\Delta xG=(xG)_{\text{subset}} - (xG)_{\text{all data}}$',
+
+    # set up colourbar
+    cb = fig.colorbar(imgplot, ax=ax,
+            fraction=0.12, pad=0.02, aspect=15, shrink=0.9)
+    cb.set_label(r'$xG=n_{{goals}}/n_{{SAT}}$',
             fontsize=18, labelpad=10)
+    cb.ax.yaxis.set_tick_params(labelsize=14)
+
 
     if imgstr is None: # plotting the histogram directly to screen
         plt.show()
@@ -706,8 +719,14 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg, iPlot,
     fig, ax = plt.subplots(1,1, figsize=(9,6),
             facecolor='w', edgecolor='k')
 
-    xmin = -0.065; xmax = 0.082;
-    ymin = -0.04 ; ymax = 0.12 ;
+
+    if(iPlot == 1): # Analysis #1
+        xmin = -0.065; xmax = 0.082;
+        ymin = -0.04 ; ymax = 0.12 ;
+    else:
+        xmin = None; xmax = None;
+        ymin = None; ymax = None;
+
 
     # Horizontal & vertical lines through (0,0)
     ax.plot([xmin, xmax], [0.0  , 0.0  ], 'k--', alpha=0.3)
@@ -729,8 +748,8 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg, iPlot,
             annx = xdata[i][anni]+0.0007
             anny = ydata[i][anni]+0.0007
 
+            # Manual shifts to avoid overlapping text
             if(iPlot == 1): # Analysis #1
-                # Manual shifts to avoid overlapping text
                 if(cond=='type' and val=='TIP'):
                     annx -= 0.0122
                     anny -= 0.0056
@@ -748,7 +767,8 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg, iPlot,
     ax.set_ylabel(r'$S\%_{{subset}}-S\%_{{all}}$',
             fontsize=16, labelpad=12)
     ax.set_title(title, fontsize=18, pad=20)
-    
+
+
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
 
@@ -781,8 +801,8 @@ titledict = {
         'bPlayoffs-1':r"playoff games",
         'bForwardPlayer-0':r"shots taken by defence",
         'bForwardPlayer-1':r"shots taken by forwards",
-        'anglesign-1' :r"shots from the goalie's right",
-        'anglesign--1':r"shots from the goalie's left",
+        'anglesign-1' :r"shots from the goalie's left",
+        'anglesign--1':r"shots from the goalie's right",
 
         'PlayingStrength-5v5':r"5v5",
         'PlayingStrength-4v5':r"4v5",

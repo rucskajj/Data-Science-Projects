@@ -7,7 +7,8 @@ import calc_routines as cr
 
 def analyze_conditions(fulldf, df0, collist, colvalues,
         dist_edges, angle_step,
-        imgdirpref, imgdirsuffs, iCondPlot, condimgstr,
+        imgdirpref, imgdirsuffs,
+        iCondPlot, condimgtitle, condimgfile,
         bPlots=[False, False, False], bPrints=False):
     '''
     A routine which makes a number of plots comparing slices of some
@@ -39,14 +40,33 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
     # df0 is passed into this routine
 
     # Calculate the histograms for every event in the data set
-    h0_shots, h0_miss, h0_goal, h0_SAT, angle_edges = \
+    h0_shots, h0_misses, h0_goals, h0_SAT, angle_edges = \
         cr.calculate_all_hists(df0, dist_edges, dist_step, angle_step,
                 iPrints)
+
+    if(bMakeCtrPlots):
+        imgdir = imgdirpref + imgdirsuffs[0]
+
+        # Call a routine that makes contour + hist maps for each
+        # of the events: SAT, SOG, miss, goals
+        pr.make_all_ctr_hist_plots(df0, imgdir,
+            h0_SAT, h0_shots, h0_misses, h0_goals,
+            dist_edges, angle_edges, h0_SAT)
+
 
     # For now, I want NaN's in xG0. It informs where the invalid
     # histogram regions are
     with (np.errstate(divide='ignore', invalid='ignore')):
-        xG0 = h0_goal/h0_SAT
+        xG0 = h0_goals/h0_SAT
+
+    if(bMakexGPlots):
+        Ngoals0 = len(df0.loc[df0['event'].isin(['GOAL'])].index)
+        NSAT0 = len(df0.index)
+
+        imgstr = imgdirpref + imgdirsuffs[1] + 'xG-ref.png'
+        pr.plot_single_histogram(xG0, dist_edges, angle_edges,
+                h0_SAT, '', [Ngoals0, NSAT0],
+                imgstr=imgstr)
 
 
     # ------- Slices of the full data Set ------- #
@@ -104,10 +124,10 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
             if(bMakeCtrPlots):
                 # Call a routine that makes contour + hist maps for each
                 # of the events: SAT, SOG, miss, goals
-                pr.make_all_ctr_hist_plots(subdf, pr.titledict, imgdir,
-                    col, colvals[i],
+                pr.make_all_ctr_hist_plots(subdf, imgdir,
                     hs_SAT, hs_shots, hs_misses, hs_goals,
-                    dist_edges, angle_edges, h0_SAT)
+                    dist_edges, angle_edges, h0_SAT,
+                    pr.titledict, col, colvals[i])
 
             # ----------------------- delta xG ---------------------------- #
 
@@ -150,8 +170,10 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
 
         if(bPrints):
             print('\nChecking counts for the number of shots:')
-            print('Full dataset\tsum(len(subdf.index))\tsum(shot histogram)')
-            print(f'{len(fulldf.index)}\t\t{np.sum(numrecords1)}\t\t\t{np.sum(numrecords2)}')
+            print('Full dataset\t Reference dataset (df0)')
+            print(f'{len(fulldf.index)}\t\t{len(df0.index)}')
+            print('sum(len(subdf.index))\tsum(shot histogram)')
+            print(f'{np.sum(numrecords1)}\t\t\t{np.sum(numrecords2)}')
 
         # Store these statistics/metrics for each column in a list
         alldiffs.append(differences)
@@ -169,9 +191,10 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
 
     # Make a plot of the statistics/metrics for each column & value
     if(bMakeSctrPlots):
-        imgstr = imgdirpref + condimgstr
+        imgstr = imgdirpref + condimgfile
         pr.conditions_plot(collist, allcolvals,
-            alldiffs, allshpcts, Spercent0, iCondPlot, imgstr=imgstr)
+            alldiffs, allshpcts, Spercent0, iCondPlot,
+            title=condimgtitle, imgstr=imgstr)
 
 
 

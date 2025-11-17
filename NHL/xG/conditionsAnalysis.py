@@ -7,9 +7,9 @@ import data_routines as dr
 do_select_and_clean = False
 
 # This elements of this list must be strings
-inputfile_yearlist = ['2024'] # must be strings
+#inputfile_yearlist = ['2024'] # must be strings
 #inputfile_yearlist = ['2021','2022','2023','2024']
-#inputfile_yearlist = [str(x) for x in range(2015,2023)]
+inputfile_yearlist = [str(x) for x in range(2015,2024)]
 
 select_clean_filedir = './data/intermed_csvs/'
 
@@ -40,10 +40,12 @@ print('\n\n-------------------- Conditions Analysis --------------------- ')
 
 # binary values to turn plotting routines on/off
 make_plots_list = [
-        False,   # for contour-2D hist plots
-        False,  # for xG and delta xG hist plots
+        True,   # for contour-2D hist plots
+        True,  # for xG and delta xG hist plots
         True   # for scatter plot comparing all conditions
         ]
+
+# turns on prints reporting details from analyze_conditions()
 make_prints = False
 
 # Sub-directories where plots will be saved to
@@ -53,8 +55,8 @@ image_subdirectories = [
         ]
 
 # Histogram bins along the distance "axis"
-distance_bins = np.linspace(0, 78, 27)
-#dist_edges = np.linspace(0, 76, 20)
+#distance_bins = np.linspace(0, 78, 27)
+distance_bins = np.linspace(0, 76, 20)
 
 # State the step size for bins along the angle "axis" (units degrees)
 angle_step = 10
@@ -74,7 +76,7 @@ print('Number of records:', len(fulldf.index))
 print('Available columns:')
 print(fulldf.columns.values)
 
-images_directory = './output/images/'
+images_directory = './output/images/A1/'
 dr.check_and_make_subdirs(images_directory, image_subdirectories)
 print(f'\nPlots are output to {images_directory}')
 
@@ -86,14 +88,90 @@ condition_values = {}
 for cond in condition_list:
     condition_values[cond] = df[cond].unique()
 
-df0 = df.copy()
+df0 = fulldf.copy()
 iCondPlot = 1
 cond_plot_str = 'All-Conditions.png'
+cond_plot_title = ''
+ap.analyze_conditions(fulldf, df0, condition_list, condition_values,
+        distance_bins, angle_step,
+        images_directory, image_subdirectories,
+        iCondPlot, cond_plot_title, cond_plot_str,
+        make_plots_list, make_prints)
+
+
+
+# ------------- 2: Shot type -------------------- #
+
+# Slices will be taken from the non-rebound, 5v5 data set
+fulldf = df.loc[
+        (df['bReb'] == 0) &
+        (df['PlayingStrength'].isin(['5v5']))
+            ]
+
+print('\n 2: Exploring the influnce of shot type, using *all* non-rebound shots taken at 5v5 strength as a reference.\n')
+print('Details on the data set to be analyzed:')
+print('Number of records:', len(fulldf.index))
+print('Available columns:')
+print(fulldf.columns.values)
+
+images_directory = './output/images/A2/'
+dr.check_and_make_subdirs(images_directory, image_subdirectories)
+print(f'\nPlots are output to {images_directory}')
+
+# Choose which columns to make histograms for
+condition_list = ['type']
+condition_values = {}
+for cond in condition_list:
+    condition_values[cond] = df[cond].unique()
+
+df0 = fulldf.copy()
+
+iCondPlot = 0
+cond_plot_str = 'shot-type.png'
+cond_plot_title = ''
 
 ap.analyze_conditions(fulldf, df0, condition_list, condition_values,
         distance_bins, angle_step,
         images_directory, image_subdirectories,
-        iCondPlot, cond_plot_str,
+        iCondPlot, cond_plot_title, cond_plot_str,
         make_plots_list, make_prints)
+
+
+
+# ------------- 3: Playing Strength -------------------- #
+
+# Slices will be taken from the non-rebound data set
+fulldf = df.loc[df['bReb'] == 0]
+
+
+print('\n 3: Exploring the influnce of playing strength, using non-rebound shots taken at 5v5 strength as a reference.\n')
+print('Details on the data set to be analyzed:')
+print('Number of records:', len(fulldf.index))
+print('Available columns:')
+print(fulldf.columns.values)
+
+images_directory = './output/images/A3/'
+dr.check_and_make_subdirs(images_directory, image_subdirectories)
+print(f'\nPlots are output to {images_directory}')
+
+# Choose which columns to make histograms for
+condition_list = ['PlayingStrength']
+
+unique_vals = df['PlayingStrength'].unique().tolist()
+unique_vals.remove('5v5')
+condition_values = {'PlayingStrength': unique_vals}
+
+df0 = df.copy()
+df0 = fulldf.loc[df['PlayingStrength'].isin(['5v5'])]
+
+iCondPlot = 0
+cond_plot_str = 'playing-str.png'
+cond_plot_title = ''
+ap.analyze_conditions(fulldf, df0, condition_list, condition_values,
+        distance_bins, angle_step,
+        images_directory, image_subdirectories,
+        iCondPlot, cond_plot_title, cond_plot_str,
+        make_plots_list, make_prints)
+
 
 
