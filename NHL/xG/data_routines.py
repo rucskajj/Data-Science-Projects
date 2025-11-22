@@ -155,9 +155,10 @@ def select_data(filepref, inputfile_yearlist,
    
     # Take the absolute value of angle, but record which records have
     # a negative angle
-    subdf['anglesign'] = np.ones(len(subdf.index), dtype=int)
+    subdf['anglesign'] = ['Pos']*len(subdf.index)
     anglesign_inds = (subdf['angle'] < 0).values
-    subdf.loc[anglesign_inds, 'anglesign'] = -1
+    subdf.loc[anglesign_inds, 'anglesign'] = 'Neg'
+    subdf['originalangle'] = np.copy(subdf['angle'])
     subdf['angle'] = np.abs(subdf['angle'])
 
     # ----------------- Write out selected data to csv ------------------ #
@@ -304,7 +305,7 @@ def clean_data(outfilename,
     # ---------------------- Remove unneeded columns ------------------- #
 
     df = df.drop( ['shotID', 'gameID','shotID_ingame',
-        'ndDef', 'ndFor', 'nsDef', 'nsFor',
+        'ndDef', 'ndFor', 'nsDef', 'nsFor', 'originalangle',
         'bEmptyNet'],
             axis=1)
 

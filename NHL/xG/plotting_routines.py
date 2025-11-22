@@ -57,7 +57,7 @@ def make_all_ctr_hist_plots(df, imgdir,
         imgstr = imgdir + column + '-' + str(column_value) + '-miss.png'
     else:
         plttitle = r"Distribution of misses for reference dataset"
-        imgstr = imgdir + 'ref-misses.png'
+        imgstr = imgdir + 'ref-miss.png'
 
     histdf = df.loc[df['event'].isin(['MISS'])]
     Nevents = len(histdf.index)
@@ -74,7 +74,7 @@ def make_all_ctr_hist_plots(df, imgdir,
         imgstr = imgdir + column + '-' + str(column_value) + '-goal.png'
     else:
         plttitle = r"Distribution of goals for reference dataset"
-        imgstr = imgdir + 'ref-goals.png'
+        imgstr = imgdir + 'ref-goal.png'
 
     histdf = df.loc[df['event'].isin(['GOAL'])]
     Nevents = len(histdf.index)
@@ -138,7 +138,7 @@ def plot_hist_with_heatmap(hist, xedges1, yedges1,
             cmap=cmap, vmin=histmin, vmax=histmax,
             levels = np.linspace(1,histmax,12))
     cb = fig.colorbar(ctrf)
-    cb.set_label(r'Density of shots', fontsize=14, labelpad=10)
+    cb.set_label(r'Density of events', fontsize=14, labelpad=10)
     cb.set_ticks([])
     
 
@@ -193,7 +193,7 @@ def plot_hist_with_heatmap(hist, xedges1, yedges1,
     ax1.set_ylabel('Angle to the net (degrees)', fontsize=16, labelpad=12)
 
     cb = fig.colorbar(imgplot)
-    cb.set_label(r"Number of shots", fontsize=18, labelpad=10)
+    cb.set_label(r"Number of events", fontsize=18, labelpad=10)
 
     if imgstr is None: # plotting the histogram directly
         plt.show()
@@ -289,7 +289,7 @@ def plot_xG_deltaxG(xGhist, dxGhist, xedges, yedges, allhist, title,
     # set up colourbar
     cb1 = fig.colorbar(imgplot1, ax=ax1,
             fraction=0.12, pad=0.02, aspect=15, shrink=0.9)
-    cb1.set_label(r'$\Delta xG=(xG)_{\text{subset}}-(xG)_{\text{all data}}$',
+    cb1.set_label(r'$\Delta xG=(xG)_{\text{subset}}-(xG)_{\text{reference}}$',
             fontsize=18, labelpad=10)
     cb1.ax.yaxis.set_tick_params(labelsize=14)
 
@@ -802,11 +802,11 @@ titledict = {
         'bForwardPlayer-0':r"shots taken by defence",
         'bForwardPlayer-1':r"shots taken by forwards",
 
-        'bOffWing-0':r"shots from strong side",
-        'bOffWing-1':r"shot from off wing",
+        'bOffWing-1':r"shots from strong side",
+        'bOffWing-0':r"shot from off wing",
 
-        'anglesign-1' :r"shots from the goalie's left",
-        'anglesign--1':r"shots from the goalie's right",
+        'anglesign-Pos' :r"shots from the goalie's left",
+        'anglesign-Neg':r"shots from the goalie's right",
 
         'PlayingStrength-5v5':r"5v5",
         'PlayingStrength-4v5':r"4v5",
