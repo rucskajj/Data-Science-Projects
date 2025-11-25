@@ -7,8 +7,6 @@
 <style>
     body {
         font-family: Arial;
-        /*padding: 10px;*/
-        /*max-width: 1000px;*/
         margin: auto;
     }
 
@@ -107,6 +105,18 @@
             line-height: 1.5;
         }
 
+    /* For mobile: reduce padding */
+    @media (max-width: 768px) {
+        .main {
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+        .plots {
+            padding-left: 40px;
+            padding-right: 40px;
+        }
+    }
+
     #analysis-description {
         background: #f8f8f8;
         padding: 10px 14px;
@@ -121,7 +131,7 @@
     }
 
     .dropdown-title {
-        font-size: 13px;
+        font-size: 16px;
         font-weight: 600;
         margin-bottom: 3px;
         text-align: left;
@@ -190,7 +200,7 @@
         <h3>Contours-Hists Plot</h3>
         <img id="hist-img" src="" alt="Contours Histogram">
         <div class="controls" style="justify-content:center; margin-top:10px;">
-        <button id="download-btn" type="button">Download Contours-Hists Plot</button>
+            <button id="download-btn" type="button">Download Contours-Hists Plot</button>
         </div>
     </div>
 
@@ -199,7 +209,7 @@
         <h3>2D Histogram Plot</h3>
         <img id="hist2d-img" src="" alt="2D Histogram">
         <div class="controls" style="justify-content:center; margin-top:10px;">
-        <button id="download2d-btn" type="button">Download 2D Histogram Plot</button>
+            <button id="download2d-btn" type="button">Download 2D Histogram Plot</button>
         </div>
     </div>
     </div>
