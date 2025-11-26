@@ -83,6 +83,63 @@
                 padding-right: 40px;
             }
         }
+        
+        /* Create two equal columns that floats next to each other */
+        .column-left {
+            float: left;
+            width: 50%;
+            padding: 10px;
+        }
+
+        /* Create two equal columns that floats next to each other */
+        .column-right {
+            float: left;
+            width: 50%;
+            padding: 10px 10px;
+            margin-top: 0em;
+        }
+
+        /* Create two equal columns that floats next to each other */
+        .row {
+            padding-top: 0px;
+            padding-bottom: 1.5em;
+            padding-right: 0px;
+            padding-left: 0px;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+        content: "";
+        display: table;
+        clear: both;
+        }
+
+        /* For figures & captions */
+        .column-left img {
+            display: block;
+            float:left;
+            width:100%;
+            border-radius:20px;
+            margin-bottom: 10px
+        }
+
+        .img-caption {
+            font-size: 1em;
+            color: #555;
+            margin: 0;
+            display: block;
+        }
+
+        /* Responsive layout - makes the two columns stack on top of each other instead of next to each other */
+        @media screen and (max-width: 1000px) {
+        .column-left {
+            width: 100%;
+        }
+        .column-right {
+            width: 100%;
+            padding: 10px 10px;
+        }
+        }
     </style>
 </head>
 <body>
@@ -97,8 +154,9 @@
     <div class="main">
         <b>Which residential buildings in Hamilton, Ontario, are best connected  to the bus-based transit network?</b><br><br>
 
-        This analysis aims to provide a quantitative, high-resolution measurement which at least begins to answer that question. <br><br>
-
+        This analysis aims to provide a quantitative, high-resolution measurement which at least begins to answer that question. <br>
+        <hr>
+        <br>
         This project provides two key insights: 1) how urban design (i.e. the shape of roads within a neighbourhood) affects walkability, and 2) how the distribution of routes + vehicle frequency affects the accessibility of Hamilton's public transit network. In pragmatic terms, someone considering a move to or within Hamilton could use this map to target neighbourhoods, streets, or even individual buildings which have a high degree of access to public transit. <br><br>
 
         Over 60,000 buildings are individually analyzed in this project. The colour of each building tracks the frequency that buses arrive at bus stops within walking distance—bright yellow is high frequency, dark blue/purple is low frequency. I refer to this quantity as the "<b>transit count</b>", and describe how it is calculated in more detail below. The techniques used give a "spatial resolution" of at least 100 metres, and often less. Following a discussion of methods used, I discuss a few insights from this work, then some avenues for future improvement. <br><br>
@@ -130,12 +188,44 @@
         <hr>
 
         <h1>Results & Insights:</h1>
-        <ul>
-           <li>The Ainslie Wood and Westdale neighbourhoods&mdash;being close to McMaster University&mdash;are popular choices for students looking for places to live. These areas are serviced by multiple bus routes which primarily follow just a few specific corridors. Thus, as expected, walkable access to transit here is quite uneven, and this analysis reveals just how stark that disparity is. The homes in Northern Westdale, and southern & Eastern Ainslie Wood are towards the lowest end of the colorbar scale, while the homes near Emerson & Main and the King Street West strip are among the best connected buildings in the city.</li>
+        <div class="row">
+            <div class="column-left">
+                <a href="https://rucskajj.github.io/Data-Science-Projects/HSR-Hamilton-QGIS.html"><img src="./images/westdale-ainslie.png" alt="A map of the distribution transit accessibility in the Westdale & Ainslie Wood neighbourhoods in Hamilton."></a>
+                <p class="img-caption">Westdale and Ainslie Wood from the webmap.</p>
+            </div>
+            <div class="column-right">
+                The Ainslie Wood and Westdale neighbourhoods&mdash;being close to McMaster University&mdash;are popular choices for students looking for places to live. These areas are serviced by multiple bus routes which primarily follow just a few specific corridors. Thus, as expected, walkable access to transit here is quite uneven, and this analysis reveals just how stark that disparity is. The homes in Northern Westdale, and southern & Eastern Ainslie Wood are towards the lowest end of the colorbar scale, while the homes near Emerson & Main and the King Street West strip are among the best connected buildings in the city.
+            </div>
+        </div>
+        <div class="row">
+            <div class="column-left">
+                <a href="https://rucskajj.github.io/Data-Science-Projects/HSR-Hamilton-QGIS.html"><img src="./images/mountain.png" alt="A map of the distribution transit accessibility in the Hamilton Mountain area."></a>
+                <p class="img-caption">Hamilton Mountain area from the webmap.</p>
+            </div>
+            <div class="column-right">
+                Transit accessibility in the Hamilton Mountain area (southern part of the map) varies widely. This is obvious from even a brief look at the HSR system map, but my analysis offers a quantitative, spatial measurement. Well connected areas are: Mohawk College, Concession St, and the vicinity of major intersections (e.g Mohawk Rd. &amp; Upper James St). Within a given "block" bounded by major streets, homes in the interior of that block can be some of least connected buildings in the city. This is especially true in the areas closest to the Lincoln Alexander Parkway. Blocks which have a more gridded street layout have more intersections, which increases the walkability of the area when compared to street layouts featuring many cul-de-sacs, dead-ends, and long, uninterrupted streets.
+            </div>
+        </div>
+        <div class="row">
+            <div class="column-left">
+                <a href="https://rucskajj.github.io/Data-Science-Projects/HSR-Hamilton-QGIS.html"><img src="./images/dundas.png" alt="A map of the distribution transit accessibility in Dundas."></a>
+                <p class="img-caption">A part of Dundas from the webmap.</p>
+            </div>
+            <div class="column-right">
+                Dundas is a historic community within the City of Hamilton. Bus routes run down the length of the main shopping strip, but only a collection of high-rise buildings just off the strip appear to be well-connected to transit, relative to the rest of the Hamilton area.
+            </div>
+        </div>
+        <div class="row">
+            <div class="column-left">
+                <a href="https://rucskajj.github.io/Data-Science-Projects/HSR-Hamilton-QGIS.html"><img src="./images/durand.png" alt="A map of the distribution transit accessibility in the Durand neighbourhood in Hamilton."></a>
+                <p class="img-caption">The Durand neighbourhood from the webmap.</p>
+            </div>
+            <div class="column-right">
+                The Durand neighbourhood contains a number of 20+ storey high-rise apartment buildings. The buildings along Caroline street are relatively much less connected to transit than the MacNab St. S and James St. S buildings (some of which are within walking distance of the Hunter St. GO centre transit hub).
+            </div>
+        </div>
+        <ul style="margin-top:0;">
            <li>A typical transit system map (including <a href="https://www.hamilton.ca/sites/default/files/2024-12/hsr-system-map-2025.pdf">HSR's own</a>) communicates the paths of the routes, but not their frequency. The map from this analysis immediately shows that Route 2 on Barton St. E is more frequent than Route 3 on Cannon/Wilson St. E, for example.</li>
-           <li>Transit accessibility in the Hamilton Mountain area (southern part of the map) varies widely. This is obvious from even a brief look at the HSR system map, but my analysis offers a quantitative, spatial measurement. Well connected areas are: Mohawk College, Concession St, and the vicinity of major intersections (e.g Mohawk Rd. &amp; Upper James St). Within a given "block" bounded by major streets, homes in the interior of that block can be some of least connected buildings in the city. This is especially true in the areas closest to the Lincoln Alexander Parkway. Blocks which have a more gridded street layout have more intersections, which increases the walkability of the area when compared to street layouts featuring many cul-de-sacs, dead-ends, and long, uninterrupted streets.</li>
-           <li>Dundas is a historic community within the City of Hamilton. Bus routes run down the length of the main shopping strip, but only a collection of high-rise buildings just off the strip appear to be well-connected to transit, relative to the rest of the Hamilton area.</li>
-           <li>The Durand neighbourhood contains a number of 20+ storey high-rise apartment buildings. The buildings along Caroline street are relatively much less connected to transit than the MacNab St. S and James St. S buildings (some of which are within walking distance of the Hunter St. GO centre transit hub).</li>
            <li>Newly built condo buildings in the downtown block bounded by King St. E, James St. N, Wilson St and Catherine St. N are very well connected to buses.</li>
            <li>I have explored nine sets of choices for the main three numerical parameters in this analysis: the search radius, the walking distance where the weighting function begins to decrease, and the walking distance where the weighting function reaches zero. The choices for the presented map (800 m, 400 m, 800 m, respectively) best demonstrate local variations in the <b>transit count</b> parameter, in my opinion. For reference, a distance of 800 m is approximately a 10-minute walk. Of course, the conclusions above depend on choices of these parameters, which reflect individual preferences in what constitutes a comfortable walking distance.</li>
         </ul>
@@ -145,8 +235,16 @@
         <ul>
             <li>Currently, bus arrivals at adjacent stops on the same route are equally counted in this calculation. For instance, if three bus stops on Route 4 are within 400 m of one house, a single #4 bus arriving at all three stops adds a total of 3 to that building's <b>transit count</b>. For my objective with this map&mdash;to track the number of bus arrivals within walking distance&mdash;this sample scenario would idea only add 1 to <b>transit count</b>. An additional step in the calculation is required, to identify unique bus arrivals rather than just total arrivals. This would require working with the GTFS data directly, rather than relying on QGIS's GTFS-GO plugin. At face-value, some of these <b>transit count</b> values are shockingly high: easily in excess of 7,000 in the downtown core, near Gore park. This is (likely) primarily due to the fact that pedestrians here have 5 to 10 chances to catch any individual bus. Addressing this question of uniqueness would increase the impact of this analysis. Imagine if one could say, with confidence, that over 1,000 buses from 8 different routes come within walking distance of a given downtown condo every single day.</li>
             <li>I have not recorded which routes these walking-distance buses belong to. This map provides an answer of how many buses are nearby, but not which ones. At the moment, identifying nearby bus routes&mdash;and where one can go via these routes&mdash;is beyond my intended scope of this analysis. I am primarily curious about the general distribution of bus access in the city, quantitatively. A user who wishes to know where transit can take them from any given building will have to consult other sources like the <a href="https://www.hamilton.ca/sites/default/files/2024-12/hsr-system-map-2025.pdf">HSR's network map</a> and <a href="https://www.hamilton.ca/home-neighbourhood/hsr/schedule-route-tools/schedules-detours">timetables</a>, or their favourite A-to-B transit app.</li>
-            <li>For unknown reasons, there are examples of erroneous calculations for (thankfully) a small number of buildings. For example, 3 buildings along Westwood Avenue between Dalewood & Stroud report a <b>transit count</b> of zero while&mdash;impossibly&mdash;their neighbours across the street have values above 2,000. At a glance, the occurrence rate seems small (perhaps less than 1 in 1,000), and since I am not interested in aggregate statistics like average or variance, for now, I am not concerned. Should the need arise, a manual investigation of these errors would be necessary.</li>
         </ul>
+        <div class="row">
+            <div class="column-left">
+                <a href="https://rucskajj.github.io/Data-Science-Projects/HSR-Hamilton-QGIS.html"><img src="./images/erroneous.png" alt="Showing erroneous numbers from the accessibility calculation."></a>
+                <p class="img-caption">An erroneous <b>transit count</b> value from the analysis.</p>
+            </div>
+            <div class="column-right">
+                For unknown reasons, there are examples of erroneous calculations for (thankfully) a small number of buildings. For example, 3 buildings along Westwood Avenue between Dalewood & Stroud report a <b>transit count</b> of zero while&mdash;impossibly&mdash;their neighbours across the street have values above 2,000. At a glance, the occurrence rate seems small (perhaps less than 1 in 1,000), and since I am not interested in aggregate statistics like average or variance, for now, I am not concerned. Should the need arise, a manual investigation of these errors would be necessary.
+            </div>
+        </div>
         <br> <br>
     </div>
 
