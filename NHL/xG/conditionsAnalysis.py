@@ -40,8 +40,8 @@ print('\n\n-------------------- Conditions Analysis --------------------- ')
 
 # binary values to turn plotting routines on/off
 make_plots_list = [
-        True,   # for contour-2D hist plots
-        True,  # for xG and delta xG hist plots
+        False,   # for contour-2D hist plots
+        False,  # for xG and delta xG hist plots
         True   # for scatter plot comparing all conditions
         ]
 
@@ -90,7 +90,7 @@ for cond in condition_list:
 
 df0 = fulldf.copy()
 iCondPlot = 1
-cond_plot_str = 'All-Conditions.png'
+cond_plot_str = 'A1-cond.png'
 cond_plot_title = ''
 ap.analyze_conditions(fulldf, df0, condition_list, condition_values,
         distance_bins, angle_step,
@@ -126,8 +126,8 @@ for cond in condition_list:
 
 df0 = fulldf.copy()
 
-iCondPlot = 0
-cond_plot_str = 'shot-type.png'
+iCondPlot = 2
+cond_plot_str = 'A2-cond.png'
 cond_plot_title = ''
 
 ap.analyze_conditions(fulldf, df0, condition_list, condition_values,
@@ -164,8 +164,8 @@ condition_values = {'PlayingStrength': unique_vals}
 df0 = df.copy()
 df0 = fulldf.loc[df['PlayingStrength'].isin(['5v5'])]
 
-iCondPlot = 0
-cond_plot_str = 'playing-str.png'
+iCondPlot = 3
+cond_plot_str = 'A3-cond.png'
 cond_plot_title = ''
 ap.analyze_conditions(fulldf, df0, condition_list, condition_values,
         distance_bins, angle_step,

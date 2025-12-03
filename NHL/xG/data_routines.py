@@ -55,6 +55,10 @@ def select_data(filepref, inputfile_yearlist,
         'shotID',
         'arenaAdjustedXCord',
         'arenaAdjustedYCord',
+        'xCord',
+        'yCord',
+        'xCordAdjusted',
+        'yCordAdjusted',
         'event',
         'game_id',
         'id',
@@ -74,10 +78,26 @@ def select_data(filepref, inputfile_yearlist,
         'season'
         ]
 
+    # It's unclear which data in the MoneyPuck .csv should be used for the
+    # x and y co-ordinates. There appears to be 3 options.
+    # arenaAdjusted?Cord has a weird "artifact": an absence of shots 
+    # near the edge of the crease.
+    # ?Cord does not have this artefact.
+    # ?CordAdjusted does not have this artefact.
+
+    # I will use the ?CordAdjust, as I assume this includes an adjustment
+    # for biases based on different arena/recording persons, which
+    # are discussed online in various hockey analytics blogs.
+
     subdf = fulldf.loc[:,columns]
     subdf.rename(columns={
-        'arenaAdjustedXCord':'x',
-        'arenaAdjustedYCord':'y',
+        #'arenaAdjustedXCord':'x',
+        #'arenaAdjustedYCord':'y',
+        'xCordAdjusted':'x',
+        'yCordAdjusted':'y',
+        #'xCord':'x',
+        #'yCord':'y',
+
         'game_id':'gameID',
         'id':'shotID_ingame',
         'shotOnEmptyNet':'bEmptyNet',
@@ -138,6 +158,13 @@ def select_data(filepref, inputfile_yearlist,
     bFwd_inds = (subdf['playerPos'].isin(['L', 'R', 'C'])).values
     subdf.loc[bFwd_inds, 'bForwardPlayer'] = 1
 
+    # I believe the "offwing" data from the MoneyPuck data set is
+    # mislabelled. The 1 values have a higher overall shooting percentage,
+    # so I interpret this one value as being a strong-sided shot, = 0.
+    bOffTrue_inds = (subdf['bOffWing'] == 0).values
+    bOffFals_inds = (subdf['bOffWing'] == 1).values
+    subdf.loc[bOffTrue_inds, 'bOffWing'] = 1
+    subdf.loc[bOffFals_inds, 'bOffWing'] = 0
 
     # -------------------- Distance and angle calculations -------------- #
 

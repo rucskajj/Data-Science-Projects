@@ -721,8 +721,17 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg, iPlot,
 
 
     if(iPlot == 1): # Analysis #1
-        xmin = -0.065; xmax = 0.082;
+        xmin = -0.070; xmax = 0.082;
         ymin = -0.04 ; ymax = 0.12 ;
+
+    elif(iPlot == 2): # Analysis #2
+        xmin = -0.06; xmax = 0.02;
+        ymin = -0.02; ymax = 0.032 ;
+
+    elif(iPlot == 3): # Analysis #3
+        xmin = 0.0 ; xmax = 0.083;
+        ymin = 0.0 ; ymax = 0.083 ;
+
     else:
         xmin = None; xmax = None;
         ymin = None; ymax = None;
@@ -740,6 +749,7 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg, iPlot,
         # xdata[i] and ydata[i] are each 1D arrays
         ax.plot(xdata[i], ydata[i], '.')
 
+
         cond = conds[i];
         for anni in range(len(xdata[i])):
             val = condvals[i][anni] # Each value for each condition
@@ -750,21 +760,42 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg, iPlot,
 
             # Manual shifts to avoid overlapping text
             if(iPlot == 1): # Analysis #1
+                annstr = str(conds[i])+':'+str(condvals[i][anni])
                 if(cond=='type' and val=='TIP'):
-                    annx -= 0.0122
-                    anny -= 0.0056
+                    annx -= 0.0151
+                    anny -= 0.0
+                if(cond=='type' and val=='DEFL'):
+                    annx += 0.0005
+                    anny -= 0.003
                 if(cond=='PlayingStrength' and val=='5v3'):
-                    annx -= 0.028
+                    annx -= 0.038
+                    anny += 0.0
+            elif(iPlot == 2): # Analysis 2
+                annstr = str(condvals[i][anni])
+                if(cond=='type' and val=='SNAP'):
+                    annx -= 0.005
                     anny -= 0.0
 
-            ax.annotate( str(conds[i])+':'+str(condvals[i][anni]),
-                xy=(annx, anny), xycoords='data',
+            elif(iPlot == 3): # Analysis 3
+                annstr = str(condvals[i][anni])
+                if(cond=='PlayingStrength' and val=='5v3'):
+                    annx -= 0.0047
+                    anny -= 0.002
+                if(cond=='PlayingStrength' and val=='4v5'):
+                    annx -= 0.0048
+                    anny -= 0.001
+                if(cond=='PlayingStrength' and val=='4v4'):
+                    annx -= 0.0
+                    anny -= 0.0015
+              
+            ax.annotate( annstr, xy=(annx, anny), xycoords='data',
                 fontsize=12, color='black')
 
     #ax.set_yscale('log')
 
-    ax.set_xlabel(r'Weighted $\Delta$xG', fontsize=16, labelpad=12)
-    ax.set_ylabel(r'$S\%_{{subset}}-S\%_{{all}}$',
+    ax.set_xlabel(r'$n_{{SAT}}$ weighted $\Delta$xG',
+            fontsize=16, labelpad=12)
+    ax.set_ylabel(r'$S\%_{{\text{subset}}}-S\%_{{\text{reference}}}$',
             fontsize=16, labelpad=12)
     ax.set_title(title, fontsize=18, pad=20)
 
@@ -780,6 +811,37 @@ def conditions_plot(conds, condvals, xdata, ydata, yavg, iPlot,
         plt.close()
 
 
+    '''
+    Tried an inset axes to make the centre of the Analysis 1 plot look
+    more readable, but it didn't really work out.
+
+    Going to leave the code here incase I want it later.
+
+    if(iPlot == 1):
+        xinsmin = -0.006; xinsmax = 0.01;
+        yinsmin = -0.01; yinsmax = 0.015;
+        # Analysis 1 gets an inset axis
+        axins = ax.inset_axes(
+            [0.1, 0.55, 0.55, 0.42],
+            xlim = (xinsmin, xinsmax),
+            ylim = (yinsmin, yinsmax))
+        axins.plot([xinsmin, xinsmax], [0.0  , 0.0  ], 'k--', alpha=0.3)
+        axins.plot([0.0 , 0.0 ], [yinsmin , yinsmax ], 'k--', alpha=0.3)
+
+
+        if(iPlot == 1):
+            axins.plot(xdata[i], ydata[i], '.') # inset axes
+
+
+            if(iPlot == 1): # Adjustments for A1's inset axes
+                annxins = xdata[i][anni]+0.0003
+                annyins = ydata[i][anni]+0.0003
+
+                # inset axes
+                axins.annotate( str(conds[i])+':'+str(condvals[i][anni]),
+                    xy=(annxins, annyins), xycoords='data',
+                    fontsize=12, color='black')
+    '''
 
 # ---------------------- Book-keeping dictionaries ----------------- #
 
@@ -802,8 +864,8 @@ titledict = {
         'bForwardPlayer-0':r"shots taken by defence",
         'bForwardPlayer-1':r"shots taken by forwards",
 
-        'bOffWing-1':r"shots from strong side",
-        'bOffWing-0':r"shot from off wing",
+        'bOffWing-0':r"shots from strong side",
+        'bOffWing-1':r"shot from off wing",
 
         'anglesign-Pos' :r"shots from the goalie's left",
         'anglesign-Neg':r"shots from the goalie's right",

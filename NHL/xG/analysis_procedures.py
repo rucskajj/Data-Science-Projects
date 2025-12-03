@@ -150,9 +150,11 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
 
             if(bPrints):
                 # Print some statistics/metrics
-                print(f'diff = {diff:.4e},\tvariance = {var:.4e}')
-                print(f'max deviation = {maxdeviations[i]}')
-                print(f'num shots(1) = {numrecords1[i]:d}, num shots(2) = {numrecords2[i]} num goals = {numgoals[i]}')
+                print(f'weighted diff = {diff:.4e},\tvariance = {var:.4e}')
+                #print(f'max deviation = {maxdeviations[i]}')
+                print(f'num shots(1) = {numrecords1[i]:d}, num shots(2) = {numrecords2[i]}, num goals = {numgoals[i]}')
+                print(f'shooting percentage = {numgoals[i]/numrecords1[i]}')
+
 
             # Make a plot of the deltaxG histogram
             if(bMakexGPlots):
