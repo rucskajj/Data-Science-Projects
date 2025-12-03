@@ -50,7 +50,7 @@
     .header {
         padding: 40px;
         text-align: center;
-        background: #00578d;
+        background: #cf7f51;
         color: white;
         border-bottom: solid black
     }
@@ -75,6 +75,15 @@
         }
         .header a:hover{
             color: yellow;
+        }
+
+        .top-link {
+          text-decoration: none; /* removes default styling of the link. Underline etc.) */
+          background-color: green; /* obvious */
+          color: white; /* text color */
+          margin: 1rem; /* adding 1rem of space around the button in all directions */
+          padding: 0.5rem 1rem; /* Adding space between the text and the border (first value is top and bottom. Second value is right and left) */
+          border-radius: 0.5rem; /* rounding the edges */
         }
 
 
@@ -143,7 +152,7 @@
 
 <div class="header">
     <h1>The effect of various conditions on shot outcomes in the NHL</h1>
-    <p><a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG">Link to code</a></b></p>
+    <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG" class="top-link">Link to code</a>
     <p>Joey Rucska</p>
     <p>Last updated on November 11, 2025.</p>
 </div>
