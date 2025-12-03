@@ -10,7 +10,7 @@
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: Tahoma, Arial, sans-serif;
             margin: 0;
         }
 
@@ -28,29 +28,40 @@
             text-align: center;
             background: #00578d;
             color: white;
-            border-bottom: solid black
+            border-bottom: solid black;
+            font-family: Georgia, serif;
         }
 
             /* Increase the font size of the h1 element */
             .header h1 {
                 font-size: 34px;
+                font-family:  Georgia, serif;
             }
 
             /* Set the font size of the p element */
             .header p {
-                font-size: 20px;
+                font-size: 26px;
             }
 
             /* Set the link colours */
             /* unvisited */
-           .header a:link{
-                color: yellow;
+
+            .top-link {
+                text-decoration: none; /* removes default styling of the link. Underline etc.) */
+                background-color: rgba(86, 86, 86, 0.625); /* obvious */
+                color: white; /* text color */
+                margin: 1rem; /* adding 1rem of space around the button in all directions */
+                padding: 0.5rem 1rem; /* Adding space between the text and the border (first value is top and bottom. Second value is right and left) */
+                border-radius: 0.5rem; /* rounding the edges */
+                font-family: Tahoma, Arial, sans-serif;
+                font-size: 22px;
+                border: solid rgba(220, 220, 220, 0.625);
             }
-           .header a:visited{
-                color: black;
-            }
-           .header a:hover{
-                color: yellow;
+
+            .top-link:hover {
+                color: black; /* text color */
+                background-color: rgba(220, 220, 220, 0.625); /* obvious */
+                border: solid rgba(86, 86, 86, 0.625);
             }
 
         /* Main column */
@@ -147,8 +158,8 @@
     <div class="header">
         <h1>Mapping Public Transit Accessibility in Hamilton, ON</h1>
         <p>Joey Rucska</p>
-        <p style="font-size:20px "><a href="https://qgiscloud.com/rucskajj/HSR_transit_accessibility_truncated7_cloud/">Link to map</a></b></p>
-        <p>Last updated on November 26, 2025.</p>
+        <p style="margin-bottom: 3rem;">Last updated on November 26, 2025.</p>
+        <a href="https://qgiscloud.com/rucskajj/HSR_transit_accessibility_truncated7_cloud/" class="top-link">Link to map</a>
     </div>
 
     <div class="main">
@@ -161,7 +172,7 @@
 
         Over 60,000 buildings are individually analyzed in this project. The colour of each building tracks the frequency that buses arrive at bus stops within walking distance—bright yellow is high frequency, dark blue/purple is low frequency. I refer to this quantity as the "<b>transit count</b>", and describe how it is calculated in more detail below. The techniques used give a "spatial resolution" of at least 100 metres, and often less. Following a discussion of methods used, I discuss a few insights from this work, then some avenues for future improvement. <br><br>
 
-        The full webmap produced using qgiscloud is available through this <a href="https://qgiscloud.com/rucskajj/HSR_transit_accessibility_truncated7_cloud/">link</a></b>. The Python code used for this analysis is available on my <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/HSR-Hamilton-map">GitHub</a>. <br><br>
+        The full webmap hosted on qgiscloud is available through this <a href="https://qgiscloud.com/rucskajj/HSR_transit_accessibility_truncated7_cloud/">link</a></b>. The Python code used for this analysis is available on my <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/HSR-Hamilton-map">GitHub</a>. <br><br>
 
 
         Some tips for interpreting, viewing, and navigating the map:
@@ -242,7 +253,7 @@
                 <p class="img-caption">An erroneous <b>transit count</b> value from the analysis.</p>
             </div>
             <div class="column-right">
-                For unknown reasons, there are examples of erroneous calculations for (thankfully) a small number of buildings. For example, 3 buildings along Westwood Avenue between Dalewood & Stroud report a <b>transit count</b> of zero while&mdash;impossibly&mdash;their neighbours across the street have values above 2,000. At a glance, the occurrence rate seems small (perhaps less than 1 in 1,000), and since I am not interested in aggregate statistics like average or variance, for now, I am not concerned. Should the need arise, a manual investigation of these errors would be necessary.
+                For unknown reasons, there are examples of erroneous calculations for (thankfully) a small number of buildings. For example, 3 buildings along Westwood Avenue between Dalewood & Stroud report a <b>transit count</b> of zero while&mdash;impossibly&mdash;their neighbours across the street have values above 1,000. At a glance, the occurrence rate seems small (perhaps less than 1 in 1,000), and since I am not interested in aggregate statistics like average or variance, for now, I am not concerned. Should the need arise, a manual investigation of these errors would be necessary.
             </div>
         </div>
         <br> <br>
