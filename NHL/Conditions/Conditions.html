@@ -6,7 +6,7 @@
 <title>Shot Histogram Viewer</title>
 <style>
     body {
-        font-family: Arial;
+        font-family: Tahoma, Arial, sans-serif;
         margin: auto;
     }
 
@@ -50,9 +50,10 @@
     .header {
         padding: 40px;
         text-align: center;
-        background: #cf7f51;
+        background: #ca672e;
         color: white;
-        border-bottom: solid black
+        border-bottom: solid black;
+        font-family:  Georgia, serif;
     }
 
         /* Increase the font size of the h1 element */
@@ -62,28 +63,25 @@
 
         /* Set the font size of the p element */
         .header p {
-            font-size: 20px;
-        }
-
-        /* Set the link colours */
-        /* unvisited */
-        .header a:link{
-            color: yellow;
-        }
-        .header a:visited{
-            color: black;
-        }
-        .header a:hover{
-            color: yellow;
+            font-size: 26px;
         }
 
         .top-link {
-          text-decoration: none; /* removes default styling of the link. Underline etc.) */
-          background-color: green; /* obvious */
-          color: white; /* text color */
-          margin: 1rem; /* adding 1rem of space around the button in all directions */
-          padding: 0.5rem 1rem; /* Adding space between the text and the border (first value is top and bottom. Second value is right and left) */
-          border-radius: 0.5rem; /* rounding the edges */
+            text-decoration: none; /* removes default styling of the link. Underline etc.) */
+            background-color: rgba(86, 86, 86, 0.625); /* obvious */
+            color: white; /* text color */
+            margin: 1rem; /* adding 1rem of space around the button in all directions */
+            padding: 0.5rem 1rem; /* Adding space between the text and the border (first value is top and bottom. Second value is right and left) */
+            border-radius: 0.5rem; /* rounding the edges */
+            font-family: Tahoma, Arial, sans-serif;
+            font-size: 22px;
+            border: solid rgba(220, 220, 220, 0.625);
+        }
+
+        .top-link:hover {
+            color: black; /* text color */
+            background-color: rgba(220, 220, 220, 0.625); /* obvious */
+            border: solid rgba(86, 86, 86, 0.625);
         }
 
 
@@ -152,9 +150,9 @@
 
 <div class="header">
     <h1>The effect of various conditions on shot outcomes in the NHL</h1>
-    <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG" class="top-link">Link to code</a>
     <p>Joey Rucska</p>
-    <p>Last updated on November 11, 2025.</p>
+    <p style="margin-bottom: 3rem;">Last updated on November 11, 2025.</p>
+    <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG" class="top-link">Link to code</a>
 </div>
 
 
