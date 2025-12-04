@@ -9,7 +9,8 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
         dist_edges, angle_step,
         imgdirpref, imgdirsuffs,
         iCondPlot, condimgtitle, condimgfile,
-        bPlots=[False, False, False], bPrints=False):
+        bPlots=[False, False, False],
+        bPrints=[False, False, False]):
     '''
     A routine which makes a number of plots comparing slices of some
     larger dataframe (fulldf) to a reference dataframe (df0).
@@ -23,6 +24,11 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
     bMakeCtrPlots  = bPlots[0]
     bMakexGPlots   = bPlots[1]
     bMakeSctrPlots = bPlots[2]
+
+    # True/False values for determining whether certain plots are made
+    bMakeDataPrints     = bPrints[0]
+    bMakeCondDataPrints = bPrints[1]
+    bMakeCheckPrints    = bPrints[2]
 
     # Turns on/off prints & plots for debugging purposes within the
     # histogram routines
@@ -53,6 +59,9 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
             h0_SAT, h0_shots, h0_misses, h0_goals,
             dist_edges, angle_edges, h0_SAT)
 
+    Ngoals0 = len( fulldf.loc[ fulldf['event'].isin(['GOAL'])].index)
+    NSAT0 = len(fulldf.index)
+    Spercent0 = Ngoals0/NSAT0
 
     # For now, I want NaN's in xG0. It informs where the invalid
     # histogram regions are
@@ -60,9 +69,6 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
         xG0 = h0_goals/h0_SAT
 
     if(bMakexGPlots):
-        Ngoals0 = len(df0.loc[df0['event'].isin(['GOAL'])].index)
-        NSAT0 = len(df0.index)
-
         imgstr = imgdirpref + imgdirsuffs[1] + 'xG-ref.png'
         pr.plot_single_histogram(xG0, dist_edges, angle_edges,
                 h0_SAT, '', [Ngoals0, NSAT0],
@@ -73,7 +79,7 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
     # Analyze "sub-dataframes"--subdf--which are created from specific
     # slices of the full data set based on values within columns
 
-    print('\n-------------------------')
+    print('\n----------------------------------')
     print('Analyzing the following subsets/slices:')
 
 
@@ -129,14 +135,12 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
                     dist_edges, angle_edges, h0_SAT,
                     pr.titledict, col, colvals[i])
 
-            # ----------------------- delta xG ---------------------------- #
+            # ----------------------- delta xG -------------------------- #
 
             # Calculate a few metrics to explore the effects of each
             # value on the expected goals histogram
             diff, var, deltaxG = cr.calculate_xG_diffvardelta(
                     xGs, hs_SAT, xG0)
-            # deltaxG = xGs - xG0
-
 
             # Store some statistics/metrics
             differences[i]   = diff
@@ -148,7 +152,7 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
                     len( subdf.loc[ subdf['event'].isin(['GOAL'])].index)
             shpcts[i]        = (numgoals[i]/numrecords1[i])
 
-            if(bPrints):
+            if(bMakeDataPrints):
                 # Print some statistics/metrics
                 print(f'weighted diff = {diff:.4e},\tvariance = {var:.4e}')
                 #print(f'max deviation = {maxdeviations[i]}')
@@ -170,12 +174,17 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
                         dist_edges, angle_edges, h0_SAT, plttitle,
                         imgstr=imgstr, ann_nums=ann_nums)
 
-        if(bPrints):
+            if(bMakeCondDataPrints):
+                print(f'S%diff = {shpcts[i]-Spercent0:0.2e};\t'
+                    f'n_sat weighted diff = {diff:0.2e}\n')
+
+        if(bMakeCheckPrints):
             print('\nChecking counts for the number of shots:')
             print('Full dataset\t Reference dataset (df0)')
             print(f'{len(fulldf.index)}\t\t{len(df0.index)}')
             print('sum(len(subdf.index))\tsum(shot histogram)')
             print(f'{np.sum(numrecords1)}\t\t\t{np.sum(numrecords2)}')
+            print('Note: the last two numbers can be different due to the fact that a small number of shots are beyond that largest-radius histogram bin.')
 
         # Store these statistics/metrics for each column in a list
         alldiffs.append(differences)
@@ -185,11 +194,14 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
         allnshots.append(numrecords1)
         allshpcts.append(shpcts)
 
+        if(bMakeCondDataPrints):
+            normShpercentDiff = np.sum(np.abs(shpcts-Spercent0))/len(shpcts)
+            normWeightDiff = np.sum(np.abs(differences))/len(differences)
+            print(f'sum|S% diff| = {normShpercentDiff:0.2e};\t'
+                    f'sum|weighted diffs| = {normWeightDiff:0.2e}')
+
     print('---------------------------------')
 
-    Nrecords0 = len(fulldf.index)
-    Ngoal0 = len( fulldf.loc[ fulldf['event'].isin(['GOAL'])].index)
-    Spercent0 = Ngoal0/Nrecords0
 
     # Make a plot of the statistics/metrics for each column & value
     if(bMakeSctrPlots):

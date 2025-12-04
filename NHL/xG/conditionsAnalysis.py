@@ -40,13 +40,17 @@ print('\n\n-------------------- Conditions Analysis --------------------- ')
 
 # binary values to turn plotting routines on/off
 make_plots_list = [
-        False,   # for contour-2D hist plots
-        False,  # for xG and delta xG hist plots
+        False, # for contour-2D hist plots
+        False, # for xG and delta xG hist plots
         True   # for scatter plot comparing all conditions
         ]
 
 # turns on prints reporting details from analyze_conditions()
-make_prints = False
+make_prints_list = [
+        False, # For intermediate data
+        False,  # For data relating to the summary conditions plot
+        False  # For checking whether the histogram sums are correct
+        ]
 
 # Sub-directories where plots will be saved to
 image_subdirectories = [
@@ -96,7 +100,7 @@ ap.analyze_conditions(fulldf, df0, condition_list, condition_values,
         distance_bins, angle_step,
         images_directory, image_subdirectories,
         iCondPlot, cond_plot_title, cond_plot_str,
-        make_plots_list, make_prints)
+        make_plots_list, make_prints_list)
 
 
 
@@ -134,7 +138,7 @@ ap.analyze_conditions(fulldf, df0, condition_list, condition_values,
         distance_bins, angle_step,
         images_directory, image_subdirectories,
         iCondPlot, cond_plot_title, cond_plot_str,
-        make_plots_list, make_prints)
+        make_plots_list, make_prints_list)
 
 
 
@@ -171,7 +175,7 @@ ap.analyze_conditions(fulldf, df0, condition_list, condition_values,
         distance_bins, angle_step,
         images_directory, image_subdirectories,
         iCondPlot, cond_plot_title, cond_plot_str,
-        make_plots_list, make_prints)
+        make_plots_list, make_prints_list)
 
 
 

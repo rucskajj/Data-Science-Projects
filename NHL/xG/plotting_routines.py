@@ -25,6 +25,7 @@ def make_all_ctr_hist_plots(df, imgdir,
         plttitle = r"Distribution of SAT for reference dataset"
         imgstr = imgdir + 'ref-SAT.png'
 
+
     histdf = df.loc[df['event'].isin(['SHOT', 'MISS','GOAL'])]
     Nevents = len(histdf.index)
     plot_hist_with_heatmap(hist_SAT,
@@ -65,6 +66,7 @@ def make_all_ctr_hist_plots(df, imgdir,
             dist_edges, angle_edges, hist0_SAT, plttitle,
             histdf['x'].values, histdf['y'].values, Nevents,
             imgstr=imgstr)
+
 
 
     # shots resulting in a goal

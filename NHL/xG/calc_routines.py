@@ -67,7 +67,7 @@ def calculate_xG_diffvardelta(xG1, a1, xG0):
 
     # calculate deltaxG only where shots were recorded in the histogram
     deltaxG = np.zeros(a1.shape)
-    diffinds = a1 > 20 # indicies for bins with > 10 shots in them
+    diffinds = np.where(a1 > 20) # indicies for bins with > 50 shots in them
     deltaxG[diffinds] = xG1[diffinds] - xG0[diffinds]
 
     # Weight by .... ?

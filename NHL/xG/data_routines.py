@@ -333,7 +333,8 @@ def clean_data(outfilename,
 
     df = df.drop( ['shotID', 'gameID','shotID_ingame',
         'ndDef', 'ndFor', 'nsDef', 'nsFor', 'originalangle',
-        'bEmptyNet'],
+        'bEmptyNet',
+        'arenaAdjustedXCord', 'arenaAdjustedYCord', 'xCord', 'yCord'],
             axis=1)
 
     # ---------------------- Output the cleaned data ------------------- #
