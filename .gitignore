@@ -1,0 +1,15 @@
+*.swp
+*__pychache__/
+
+# Input/output data for the HSR project
+./HSR-Hamilton-map/inputdata/*
+./HSR-Hamilton-map/outputdata/*
+./HSR-Hamilton-map/csvbackup/*
+./HSR-Hamilton-map/*.csv*
+
+./HSR-Hamilton-map/remove_some_fields.py
+./HSR-Hamilton-map/symbology-style.db
+
+# Input/output data for the NHL project
+./NHL/xG/data/*
+./NHL/xG/output/*
