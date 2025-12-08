@@ -33,6 +33,9 @@
         text-align: center;
         flex: 1 1 400px;
     }
+        .plot-container h3 {
+        margin-bottom: 0.5em;
+      }
 
     img {
         max-width: 100%;
@@ -194,31 +197,43 @@
 
     <!-- Toggle Buttons -->
     <div class="controls">
-    <button id="toggle-contours" type="button">Show/Hide Contours-Hists</button>
-    <button id="toggle-2d" type="button">Show/Hide 2D Histogram</button>
+    <p style="font-size: 18px; margin-top: 0.5em; margin-bottom: 0.5em;">Toggle show/hide for each plot:</p>
+    <button id="toggle-contours" type="button">Event Map</button>
+    <button id="toggle-2d" type="button">xG Histogram</button>
+    <button id="toggle-cond" type="button">Impact of Conditions</button>
     </div>
 </div>
 
 <div class="plots">
     <!-- Plots wrapper -->
     <div class="plots-wrapper">
-    <!-- Contours-Hists Plot -->
+
+    <!-- Event Map & Histogram Plot -->
     <div class="plot-container" id="contours-container">
-        <h3>Contours-Hists Plot</h3>
-        <img id="hist-img" src="" alt="Contours Histogram">
+        <h3>Event Map & Histogram</h3>
+        <img id="hist-img" src="" alt="Event Map & Histogram">
         <div class="controls" style="justify-content:center; margin-top:10px;">
-            <button id="download-btn" type="button">Download Contours-Hists Plot</button>
+            <button id="download-btn" type="button">Download Event Map</button>
         </div>
     </div>
 
-    <!-- 2Dhists Plot -->
+    <!-- Expected Goals Histogram Plot -->
     <div class="plot-container" id="hist2d-container">
-        <h3>2D Histogram Plot</h3>
-        <img id="hist2d-img" src="" alt="2D Histogram">
+        <h3>Expected Goals Histogram</h3>
+        <img id="hist2d-img" src="" alt="Expected Goals Histogram">
         <div class="controls" style="justify-content:center; margin-top:10px;">
-            <button id="download2d-btn" type="button">Download 2D Histogram Plot</button>
+            <button id="download2d-btn" type="button">Download xG Histogram</button>
         </div>
     </div>
+
+    <div class="plot-container" id="cond-container">
+        <h3>Impact of Conditions</h3>
+        <img id="cond-img" src="" alt="Conditions plot">
+        <div class="controls" style="justify-content:center; margin-top:10px;">
+            <button id="downloadcond-btn" type="button">Download Impact of Conditions</button>
+        </div>
+    </div>
+
     </div>
 
 </div>
@@ -307,12 +322,16 @@ const valSel = document.getElementById("value-select");
 const evtSel = document.getElementById("event-select");
 const img = document.getElementById("hist-img");
 const img2d = document.getElementById("hist2d-img");
+const imgCond = document.getElementById("cond-img");
 const downloadBtn = document.getElementById("download-btn");
 const download2dBtn = document.getElementById("download2d-btn");
+const downloadCondBtn = document.getElementById("downloadcond-btn");
 const contoursContainer = document.getElementById("contours-container");
 const hist2dContainer = document.getElementById("hist2d-container");
+const condContainer = document.getElementById("cond-container");
 const toggleContoursBtn = document.getElementById("toggle-contours");
 const toggle2dBtn = document.getElementById("toggle-2d");
+const toggleCondBtn = document.getElementById("toggle-cond");
 
 /* ---- Reference dataset ---- */
 const referenceLabel = "ref";
@@ -448,6 +467,7 @@ function updateImages() {
   const analysisFiles = fileMap[analysisSel.value];
   img.src = analysisFiles.includes(filename) ? `${analysisFolder}${filename}` : "";
   img2d.src = filename2d ? `${analysisFolder2D}${filename2d}` : "";
+  imgCond.src = `plots/${analysisSel.value}/${analysisSel.value}-cond.png` ;
 }
 
 
@@ -482,6 +502,14 @@ download2dBtn.addEventListener("click", () => {
   link.click();
 });
 
+downloadCondBtn.addEventListener("click", () => {
+  if (!imgCond.src) return;
+  const link = document.createElement("a");
+  link.href = imgCond.src;
+  link.download = imgCond.src.split("/").pop();
+  link.click();
+});
+
 /* ---- Toggle visibility buttons ---- */
 toggleContoursBtn.addEventListener("click", () => {
   contoursContainer.style.display = contoursContainer.style.display === "none" ? "block" : "none";
@@ -489,6 +517,10 @@ toggleContoursBtn.addEventListener("click", () => {
 
 toggle2dBtn.addEventListener("click", () => {
   hist2dContainer.style.display = hist2dContainer.style.display === "none" ? "block" : "none";
+});
+
+toggleCondBtn.addEventListener("click", () => {
+  condContainer.style.display = condContainer.style.display === "none" ? "block" : "none";
 });
 </script>
 
