@@ -1,5 +1,5 @@
 *.swp
-*__pychache__/
+*__pycache__/
 
 # Input/output data for the HSR project
 ./HSR-Hamilton-map/inputdata/*
