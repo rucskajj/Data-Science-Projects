@@ -5,7 +5,7 @@ import plotting_routines as pr
 import calc_routines as cr
 import itertools
 
-def split_df_by_conditions(df, condition_list, Nhist_bins, output_thresh,
+def make_xG_hists(df, condition_list, Nhist_bins, output_thresh,
         dist_edges, angle_step,
         npy_dir=None,  bPrints=[False, False, False]):
     """
@@ -151,3 +151,6 @@ def split_df_by_conditions(df, condition_list, Nhist_bins, output_thresh,
         print(f'Median bin count across all sub-dataframes: {int(np.median(nrec_subdf_arr)):d}')
         print(f'Minimum bin count across all sub-dataframes: {int(np.min(nrec_subdf_arr)):d}')
         print(f'Maximum bin count across all sub-dataframes: {int(np.max(nrec_subdf_arr)):d}')
+
+
+

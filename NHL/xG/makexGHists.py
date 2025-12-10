@@ -4,7 +4,7 @@ import data_routines as dr
 import xG_hist_procedures as xhp
 import calc_routines as cr
 
-do_select_and_clean = True
+do_select_and_clean = False
 
 # This elements of this list must be strings
 #inputfile_yearlist = ['2024'] # must be strings
@@ -16,7 +16,6 @@ select_clean_filedir = './data/intermed_csvs/'
 inputfile_prefix   = './data/shotsdata_MP/shots_'
 select_outfile = select_clean_filedir + 'selected_data.csv'
 clean_outfile = select_clean_filedir + 'cleaned_data.csv'
-
 
 
 # There is no need to select and clean data every time, just every time
@@ -85,7 +84,7 @@ make_prints_list = [
 npys_directory = './output/npys/A1/'
 dr.check_and_make_subdirs(npys_directory, bDoPrints=True)
 
-xhp.split_df_by_conditions(df, condition_list, Nhist_bins, output_thresh,
+xhp.make_xG_hists(df, condition_list, Nhist_bins, output_thresh,
         distance_bins, angle_step,
         npys_directory, make_prints_list)
 
