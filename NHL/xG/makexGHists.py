@@ -9,7 +9,8 @@ do_select_and_clean = False
 # This elements of this list must be strings
 #inputfile_yearlist = ['2024'] # must be strings
 #inputfile_yearlist = ['2021','2022','2023','2024']
-inputfile_yearlist = [str(x) for x in range(2015,2024)]
+year_list = list(range(2015,2025))
+inputfile_yearlist = [str(yr) for yr in year_list]
 
 select_clean_filedir = './data/intermed_csvs/'
 
@@ -23,17 +24,21 @@ clean_outfile = select_clean_filedir + 'cleaned_data.csv'
 # and cleaned
 # select_data() and clean_data() write their outputs to files.
 if(do_select_and_clean):
+        print('\n------------ Selecting and cleaning data --------------')
+        dr.select_data(inputfile_prefix, inputfile_yearlist,
+                outfilename = select_outfile)
 
-    dr.select_data(inputfile_prefix, inputfile_yearlist,
-            outfilename = select_outfile)
 
-
-    dr.clean_data(clean_outfile,
-            infilename = select_outfile)
+        dr.clean_data(clean_outfile,
+                infilename = select_outfile)
     
+
+print('\n\n------------------- Calculating xG histograms -----------------------------\n')
+
 # Read in all raw data output by the clean_data routine
 df = pd.read_csv(clean_outfile)
-print('\nDetails on the data set to be analyzed:')
+df = df.loc[(df['season'].isin(year_list[0:-1]))]
+print(f'{year_list[-1]} season is removed, and reserved assessing the model.')
 print('Number of records:', len(df.index))
 
 # ----------- Bookkeeping applicable to all analyses --------------- #
@@ -55,6 +60,7 @@ h0_shots, h0_misses, h0_goals, h0_SAT, angle_edges = \
 # histogram regions are
 with (np.errstate(divide='ignore', invalid='ignore')):
     xG0 = h0_goals/h0_SAT
+xG0_nans = np.isnan(xG0)
 N_invalid_bins = np.count_nonzero(np.isnan(xG0))
 
 Nhist_bins = (len(distance_bins)-2)*((90/angle_step)+1) - (N_invalid_bins)
@@ -85,7 +91,7 @@ npys_directory = './output/npys/A1/'
 dr.check_and_make_subdirs(npys_directory, bDoPrints=True)
 
 xhp.make_xG_hists(df, condition_list, Nhist_bins, output_thresh,
-        distance_bins, angle_step,
+        distance_bins, angle_step, xG0_nans,
         npys_directory, make_prints_list)
 
 
@@ -112,8 +118,8 @@ make_prints_list = [
 npys_directory = './output/npys/A2/'
 dr.check_and_make_subdirs(npys_directory, bDoPrints=True)
 
-xhp.split_df_by_conditions(df, condition_list, Nhist_bins, output_thresh,
-        distance_bins, angle_step,
+xhp.make_xG_hists(df, condition_list, Nhist_bins, output_thresh,
+        distance_bins, angle_step, xG0_nans,
         npys_directory, make_prints_list)
 
 
@@ -140,6 +146,6 @@ make_prints_list = [
 npys_directory = './output/npys/A3/'
 dr.check_and_make_subdirs(npys_directory, bDoPrints=True)
 
-xhp.split_df_by_conditions(df, condition_list, Nhist_bins, output_thresh,
-        distance_bins, angle_step,
+xhp.make_xG_hists(df, condition_list, Nhist_bins, output_thresh,
+        distance_bins, angle_step, xG0_nans,
         npys_directory, make_prints_list)

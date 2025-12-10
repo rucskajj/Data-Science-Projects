@@ -6,7 +6,7 @@ import calc_routines as cr
 import itertools
 
 def make_xG_hists(df, condition_list, Nhist_bins, output_thresh,
-        dist_edges, angle_step,
+        dist_edges, angle_step, xG0_nans,
         npy_dir=None,  bPrints=[False, False, False]):
     """
     A routine which splits a dataframe into multiple sub-dataframes
@@ -102,9 +102,10 @@ def make_xG_hists(df, condition_list, Nhist_bins, output_thresh,
 
         check_nrec_subdf += nrec_subdf
 
-        hist_path = npy_dir + hist_str # output file path
 
-        
+        # ---------------- Output data ----------------- #
+
+        hist_path = npy_dir + hist_str # output file path
         if((npy_dir is not None) and (nrec_subdf >= output_thresh*Nhist_bins)):
             # If event count meets the output threshold, output an xG histogram for subdf
 
@@ -117,6 +118,15 @@ def make_xG_hists(df, condition_list, Nhist_bins, output_thresh,
             # histogram regions are.
             with (np.errstate(divide='ignore', invalid='ignore')):
                 xG = h_goals/h_SAT
+            
+            # Set xG values to 0.0 where:
+            # 1) the full dataset xG hist (xG0) DOES NOT have NaN's
+            #    - these are the physically valid bins.
+            # 2) the current sub-dataframe xG hist (xG) DOES have NaN's
+            xG_nans = np.isnan(xG)
+            valid_nans = ~xG0_nans & (xG_nans)
+            #print(valid_nans)
+            xG[valid_nans] = 0.0 # now xG models will correctly grab xG=0 for these bins
 
             if(bMakeLoopPrints):
                 print('Saving histogram to:')
