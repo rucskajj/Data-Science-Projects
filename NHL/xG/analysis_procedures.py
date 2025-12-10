@@ -25,7 +25,7 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
     bMakexGPlots   = bPlots[1]
     bMakeSctrPlots = bPlots[2]
 
-    # True/False values for determining whether certain plots are made
+    # True/False values for determining whether certain prints are made
     bMakeDataPrints     = bPrints[0]
     bMakeCondDataPrints = bPrints[1]
     bMakeCheckPrints    = bPrints[2]
@@ -71,7 +71,7 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
     if(bMakexGPlots):
         imgstr = imgdirpref + imgdirsuffs[1] + 'xG-ref.png'
         pr.plot_single_histogram(xG0, dist_edges, angle_edges,
-                h0_SAT, '', [Ngoals0, NSAT0],
+                h0_SAT, 'xG for reference data set', [Ngoals0, NSAT0],
                 imgstr=imgstr)
 
 
@@ -195,10 +195,12 @@ def analyze_conditions(fulldf, df0, collist, colvalues,
         allshpcts.append(shpcts)
 
         if(bMakeCondDataPrints):
-            normShpercentDiff = np.sum(np.abs(shpcts-Spercent0))/len(shpcts)
-            normWeightDiff = np.sum(np.abs(differences))/len(differences)
-            print(f'sum|S% diff| = {normShpercentDiff:0.2e};\t'
-                    f'sum|weighted diffs| = {normWeightDiff:0.2e}')
+            normShpercentDiff = np.mean(np.abs(shpcts-Spercent0))
+            normWeightDiff = np.mean(np.abs(differences))
+            print(f'mean|S% diff| = {normShpercentDiff:0.2e};\t'
+                    f'mean|weighted diffs| = {normWeightDiff:0.2e}')
+            print(f'sum two means = {normShpercentDiff+normWeightDiff:0.2e};\t'
+                  f'normed by ref S% = {(normShpercentDiff+normWeightDiff)/Spercent0:0.2f}')
 
     print('---------------------------------')
 

@@ -4,12 +4,12 @@ import analysis_procedures as ap
 import data_routines as dr
 
 
-do_select_and_clean = False
+do_select_and_clean = True
 
 # This elements of this list must be strings
 #inputfile_yearlist = ['2024'] # must be strings
 #inputfile_yearlist = ['2021','2022','2023','2024']
-inputfile_yearlist = [str(x) for x in range(2015,2024)]
+inputfile_yearlist = [str(x) for x in range(2015,2025)]
 
 select_clean_filedir = './data/intermed_csvs/'
 
@@ -40,16 +40,16 @@ print('\n\n-------------------- Conditions Analysis --------------------- ')
 
 # binary values to turn plotting routines on/off
 make_plots_list = [
-        False, # for contour-2D hist plots
-        False, # for xG and delta xG hist plots
+        True, # for contour-2D hist plots
+        True, # for xG and delta xG hist plots
         True   # for scatter plot comparing all conditions
         ]
 
 # turns on prints reporting details from analyze_conditions()
 make_prints_list = [
-        False, # For intermediate data
-        False,  # For data relating to the summary conditions plot
-        False  # For checking whether the histogram sums are correct
+        False,  # For intermediate data
+        True,  # For data relating to the summary conditions plot
+        False   # For checking whether the histogram sums are correct
         ]
 
 # Sub-directories where plots will be saved to
@@ -74,7 +74,7 @@ df = pd.read_csv(clean_outfile)
 # Slices will be taken from the entire raw data set
 fulldf = df.copy()
 
-print('\n 1: Exploring the influnce of all shot conditions\n')
+print('\n 1: Exploring the influence of all shot conditions\n')
 print('Details on the data set to be analyzed:')
 print('Number of records:', len(fulldf.index))
 print('Available columns:')

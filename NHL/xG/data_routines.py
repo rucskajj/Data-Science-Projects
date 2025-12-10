@@ -349,26 +349,49 @@ def clean_data(outfilename,
 
 # ---------------------- Filesystem management ---------------------- #
 
-def check_and_make_subdirs(topdir, subdirs, bDoPrints=False):
+def check_and_make_subdirs(topdir, subdirs=None, bDoPrints=False):
     '''
-    Create directories if they do not already exist.
+    Create multiple directories if they do not already exist.
+
+    topdir : str
+        The top-level directory path.
+    subdirs : list of str
+        A list of sub-directory paths (relative to topdir) to create.
+    bDoPrints : bool
+        Whether to print out messages about created/existing directories.
     '''
 
     if (bDoPrints):
         print('\nChecking output directories:')
 
-    for subdir in subdirs:
-        dirpath = topdir + subdir
-        try: # Create directory if it does not exist
-            path = pathlib.Path(dirpath)
-            path.mkdir(parents=True)
-            if (bDoPrints):
-                print(f'Directory path {dirpath} created.')
-        except FileExistsError:
-            # Can let the user know the path already exists
-            # (parent script execution is not terminated)
-            if (bDoPrints):
-                print(f'Directory path {dirpath} already exists.')
+    if(subdirs is None):
+        create_single_subdir(topdir, bDoPrints)
+    else:
+        for subdir in subdirs:
+            dirpath = topdir + subdir
+            create_single_subdir(dirpath, bDoPrints)
+
+
+def create_single_subdir(dirpath, bDoPrints=False):
+    '''
+    Create a single directory if it does not already exist.
+
+    dirpath : str
+        The directory path to create.
+    bDoPrints : bool
+        Whether to print out messages about created/existing directories.
+    '''
+
+    try: # Create directory if it does not exist
+        path = pathlib.Path(dirpath)
+        path.mkdir(parents=True)
+        if (bDoPrints):
+            print(f'Directory path {dirpath} created.')
+    except FileExistsError:
+        # Can let the user know the path already exists
+        # (parent script execution is not terminated)
+        if (bDoPrints):
+            print(f'Directory path {dirpath} already exists.')
 
 
 # --------------------- Spare code ------------------------------------ #
