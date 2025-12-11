@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-import data_routines as dr
-import plotting_routines as pr
 import calc_routines as cr
 import itertools
 
@@ -195,7 +193,7 @@ def run_xG_model_on_single_df(df, condition_list, SAT_threshs,
     N_None = 0
     N_outofbounds = 0
 
-    loopprintstep = 1000
+    loopprintstep = 10000
     loopcount = 0
 
     # --- Loop through all rows in the test dataframe, calculating and xG for each shot --- #
@@ -263,6 +261,14 @@ def run_xG_model_on_single_df(df, condition_list, SAT_threshs,
         if (event == 'GOAL' and xG_shot == 0): # Need to use an xG value that is not zero
             logloss_shot = -1*( outcome*np.log(xG_inf) + (1-outcome)*np.log(1-xG_inf) )
             # make some counter
+        
+        elif (event == 'GOAL' and xG_shot == 1.0): # the 0 * np.log(0) calculation is poorly behaved
+            logloss_shot = 0.0
+            # make some counter
+        
+        elif (event != 'GOAL' and xG_shot == 1.0): # Need to use an xG value that is close to one
+            logloss_shot = -1*( outcome*np.log(1-xG_inf) + (1-outcome)*np.log(1-(1-xG_inf)) )
+            # make some counter
 
         elif (event != 'GOAL' and xG_shot == 0): # the 0 * np.log(0) calculation is poorly behaved
             logloss_shot = 0.0
@@ -272,7 +278,7 @@ def run_xG_model_on_single_df(df, condition_list, SAT_threshs,
             logloss_shot = -1*( outcome*np.log(xG_shot) + (1-outcome)*np.log(1 - xG_shot) )
             
         if np.isinf(logloss_shot):
-            print(f'Inf found.')
+            print(f'Inf found. event={event}, outcome={outcome}, xG_shot={xG_shot}.')
             break # There should not be infs after the previous if statements
 
 

@@ -222,7 +222,7 @@ def clean_data(outfilename,
         df = pd.read_csv(infilename)
         print(f'Loaded: {infilename}')
     except FileNotFoundError:
-        print(f'FileNotFoundError [clean_data]: Input files not found at {infilename}. Ensure select_data() was run first?')
+        print(f'FileNotFoundError [clean_data]: Input file not found at {infilename}. Ensure select_data() was run first?')
 
     if (verbosity == 2):
         print('\nColumns from the selected data set:')
