@@ -192,6 +192,9 @@ def run_xG_model_on_single_df(df, condition_list, SAT_threshs,
     # Counters for specific occurrences while looping through the training data
     N_None = 0
     N_outofbounds = 0
+    N_badlogloss = np.zeros(4, dtype=int)
+    xG_nonzeromin = 1.0
+    xG_nononemax  = 0.0
 
     loopprintstep = 10000
     loopcount = 0
@@ -246,10 +249,29 @@ def run_xG_model_on_single_df(df, condition_list, SAT_threshs,
         xG_shot = xG[angi,disti]
         SAT_shot = int(SAT_hist[angi,disti]) # count low SAT indices
         
-
         if np.isnan(xG_shot):
             print(f'nan found in xG.')
             break # There should not been NaN's pulled from the xG hists.
+
+        if (xG_shot < 0.0):
+            print('Found negative xG value:')
+            print(f'loopcount={loopcount}, index={index}, xG={xG_shot}')
+            print(hist_str)
+            break # There should not be negative values pulled from the xG hists.
+
+        if (xG_shot > 1.0):
+            print('Found xG value > 1:')
+            print(f'loopcount={loopcount}, index={index}, xG={xG_shot}')
+            print(hist_str)
+            break # There should not values greater than 1 pulled from the xG hists.
+
+        # Track the minimum (above zero) and maximum (below 1) xG values
+        if(xG_shot > 0):
+            if(xG_shot < xG_nonzeromin):
+                xG_nonzeromin = xG_shot
+        if(xG_shot < 1.0):
+            if(xG_shot > xG_nononemax):
+                xG_nononemax = xG_shot
 
         # Fetch whether this shot was a goal or not
         event = row['event']
@@ -260,23 +282,24 @@ def run_xG_model_on_single_df(df, condition_list, SAT_threshs,
 
         if (event == 'GOAL' and xG_shot == 0): # Need to use an xG value that is not zero
             logloss_shot = -1*( outcome*np.log(xG_inf) + (1-outcome)*np.log(1-xG_inf) )
-            # make some counter
+            N_badlogloss[0] += 1
         
         elif (event == 'GOAL' and xG_shot == 1.0): # the 0 * np.log(0) calculation is poorly behaved
             logloss_shot = 0.0
-            # make some counter
+            N_badlogloss[1] += 1
         
         elif (event != 'GOAL' and xG_shot == 1.0): # Need to use an xG value that is close to one
             logloss_shot = -1*( outcome*np.log(1-xG_inf) + (1-outcome)*np.log(1-(1-xG_inf)) )
-            # make some counter
+            N_badlogloss[2] += 1
 
         elif (event != 'GOAL' and xG_shot == 0): # the 0 * np.log(0) calculation is poorly behaved
             logloss_shot = 0.0
-            # make some counter
+            N_badlogloss[3] += 1
 
         else: # Calculate logloss as normal
             logloss_shot = -1*( outcome*np.log(xG_shot) + (1-outcome)*np.log(1 - xG_shot) )
-            
+
+
         if np.isinf(logloss_shot):
             print(f'Inf found. event={event}, outcome={outcome}, xG_shot={xG_shot}.')
             break # There should not be infs after the previous if statements
@@ -296,7 +319,6 @@ def run_xG_model_on_single_df(df, condition_list, SAT_threshs,
             print('')
             print(hist_str)
             print(f'angle = {row["angle"]:.2f}, distance = {row["distance"]:.2f}')
-            #print(f'disti={disti}, angi={angi}')
             print(f'xG[{angi},{disti}] = {xG_shot}')
             print(f'SAT_hist[{angi},{disti}] = {SAT_shot}')
             print(f'event = {event}')
@@ -304,20 +326,6 @@ def run_xG_model_on_single_df(df, condition_list, SAT_threshs,
 
             #plt.imshow(xG, origin='lower')
             #plt.show()
-
-
-    output_data = {
-        'SAT bin Threshold': SAT_threshs,
-        'num shots above threshold': SAT_thresh_counts,
-        'sum of logloss': sum_logloss,
-        'average logloss': sum_logloss/SAT_thresh_counts,
-        'sum of xG': sum_xG,
-        'num observed goals': sum_goals
-    }
-    output_df = pd.DataFrame(output_data)
-    csv_out_path = xG_output_directory+f'A{A_ind}.csv'
-    output_df.to_csv(csv_out_path, index=False)
-    print(f'\nOutput xG model results to: {csv_out_path}')
 
     if(bMakeDataPrints):
         print('\n---------------------------------')
@@ -331,3 +339,28 @@ def run_xG_model_on_single_df(df, condition_list, SAT_threshs,
         print(f'Total number of shots beyond distance bounds: {N_outofbounds}')
 
         print(f'\nTotal number of shots: {len(df.index):d}')
+
+
+    # Key output data to assess the performance of this xG model
+    output_data = {
+        'SAT bin Threshold': SAT_threshs,
+        'num shots above threshold': SAT_thresh_counts,
+        'sum of logloss': sum_logloss,
+        'average logloss': sum_logloss/SAT_thresh_counts,
+        'sum of xG': sum_xG,
+        'num observed goals': sum_goals
+    }
+    output_df = pd.DataFrame(output_data)
+    csv_out_path = xG_output_directory+f'A{A_ind}.csv'
+    output_df.to_csv(csv_out_path, index=False)
+    print(f'\nOutput xG model results to: {csv_out_path}')
+
+    # Some diagnostic counts & values checking on the fringe behaviour of the model/histograms
+    txt_out_path = xG_output_directory+f'A{A_ind}.txt'
+    with open(txt_out_path, "w") as f:
+        f.write(f'N_none={N_None}\n')
+        f.write(f'N_outofbounds={N_outofbounds}\n')
+        for i in range(len(N_badlogloss)):
+            f.write(f'N_badlogloss[{i}]={N_badlogloss[i]}\n')
+        f.write(f'xG non-one maximum={xG_nononemax}\n')
+        f.write(f'xG non-zero minimum={xG_nonzeromin}\n')
