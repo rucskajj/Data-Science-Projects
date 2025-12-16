@@ -1,0 +1,24 @@
+{
+  "2015-2024": [
+   "model-1-avglogloss.png",
+   "model-1-xG_obs_diff.png",
+   "model-1-xG_obs_diff_pct.png",
+   "model-2-avglogloss.png",
+   "model-2-xG_obs_diff.png",
+   "model-2-xG_obs_diff_pct.png",
+   "model-3-avglogloss.png",
+   "model-3-xG_obs_diff.png",
+   "model-3-xG_obs_diff_pct.png"
+  ],
+  "2020-2024": [
+   "model-1-avglogloss.png",
+   "model-1-xG_obs_diff.png",
+   "model-1-xG_obs_diff_pct.png",
+   "model-2-avglogloss.png",
+   "model-2-xG_obs_diff.png",
+   "model-2-xG_obs_diff_pct.png",
+   "model-3-avglogloss.png",
+   "model-3-xG_obs_diff.png",
+   "model-3-xG_obs_diff_pct.png"
+  ]
+}

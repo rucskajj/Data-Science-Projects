@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>xG ratios and model diagnostics</title>
+<style>
+  body {
+    font-family: Tahoma, Arial, sans-serif;
+    margin: auto;
+  }
+
+  /* Header */
+  .header {
+    padding: 40px;
+    text-align: center;
+    background: #ca672e;
+    color: white;
+    border-bottom: solid black;
+    font-family: Georgia, serif;
+  }
+  .header h1 { font-size: 34px; }
+  .header p  { font-size: 26px; }
+
+  .top-link {
+    text-decoration: none;
+    background-color: rgba(86, 86, 86, 0.625);
+    color: white;
+    margin: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-family: Tahoma, Arial, sans-serif;
+    font-size: 22px;
+    border: solid rgba(220, 220, 220, 0.625);
+    display: inline-block;
+  }
+  .top-link:hover {
+    color: black;
+    background-color: rgba(220, 220, 220, 0.625);
+    border: solid rgba(86, 86, 86, 0.625);
+  }
+
+  /* Content */
+  .main {
+    background-color: white;
+    padding-top: 40px;
+    padding-left: 25%;
+    padding-right: 25%;
+    line-height: 1.5;
+  }
+  .main h1 {
+    padding-top: 16px;
+    font-size: 20px;
+    font-weight: bold;
+    text-decoration: underline;
+  }
+
+  /* Plots section */
+  .plots {
+    background-color: white;
+    padding-left: 20%;
+    padding-right: 20%;
+    line-height: 1.5;
+    padding-bottom: 30px;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: flex-end;
+  }
+  select, button {
+    padding: 8px;
+    font-size: 1rem;
+  }
+
+  .dropdown-block {
+    display: inline-block;
+    margin-right: 15px;
+  }
+  .dropdown-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 3px;
+    text-align: left;
+  }
+
+  #analysis-description {
+    background: #f8f8f8;
+    padding: 10px 14px;
+    border-left: 5px solid #3366cc;
+    border-radius: 4px;
+    margin-bottom: 15px;
+  }
+
+  /* Responsive plots layout (like Conditions.html) */
+  .plots-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+  .plot-container {
+    text-align: center;
+    flex: 1 1 400px;
+  }
+  .plot-container h3 {
+    margin-bottom: 0.5em;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    padding: 6px;
+    margin-top: 10px;
+  }
+
+  /* For mobile: reduce padding / use full width */
+  @media (max-width: 768px) {
+    .main {
+      padding-left: 40px;
+      padding-right: 40px;
+    }
+    .plots {
+      padding-left: 40px;
+      padding-right: 40px;
+    }
+    img {
+      max-width: 100%;
+      width: 100%;
+    }
+  }
+
+  /* Stack plots when too narrow to show side-by-side */
+  @media (max-width: 850px) {
+    .plots-wrapper { flex-direction: column; }
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+
+<body>
+  <div class="header">
+    <h1>xG ratios and model diagnostics</h1>
+    <p>Joey Rucska</p>
+    <p style="margin-bottom: 3rem;">Last updated on <!-- TODO: update date -->.</p>
+    <a href="#" class="top-link">Link to code</a>
+  </div>
+
+  <div class="main">
+    <b>This page summarizes results from an expected-goals (xG) modeling/validation exercise.</b>
+    Replace this text with your final write-up.<br><br>
+
+    <hr>
+    <h1>Results</h1>
+
+    <!-- Analysis selector -->
+    <div class="controls">
+      <label for="analysis-select"><b>Analysis:</b></label>
+      <select id="analysis-select"></select>
+    </div>
+
+    <div id="analysis-description"><!-- Analysis description will appear here --></div>
+
+    <!-- Dropdowns: metric applies to BOTH plots; model applies to single-model plot -->
+    <div class="controls">
+      <div class="dropdown-block">
+        <div class="dropdown-title" id="metric-title">Metric</div>
+        <select id="metric-select"></select>
+      </div>
+
+      <div class="dropdown-block" id="model-block">
+        <div class="dropdown-title" id="model-title">Model</div>
+        <select id="model-select"></select>
+      </div>
+    </div>
+
+    <!-- Toggle buttons (same location) -->
+    <div class="controls">
+      <p style="font-size: 18px; margin-top: 0.5em; margin-bottom: 0.5em;">Toggle show/hide:</p>
+      <button id="toggle-agg" type="button">Aggregate plot</button>
+      <button id="toggle-single" type="button">Single model plot</button>
+      <button id="toggle-abs" type="button">|xG − Observed| % plot</button>
+    </div>
+  </div>
+
+  <div class="plots">
+    <!-- Two side-by-side plot containers -->
+    <div class="plots-wrapper">
+      <div class="plot-container" id="agg-container">
+        <h3 id="agg-title">Aggregate plot</h3>
+        <img id="agg-img" src="" alt="Aggregate plot" />
+        <div class="controls" style="justify-content:center; margin-top:10px;">
+          <button id="download-agg" type="button">Download aggregate plot</button>
+        </div>
+      </div>
+
+      <div class="plot-container" id="single-container">
+        <h3 id="single-title">Single model plot</h3>
+        <img id="single-img" src="" alt="Single model plot" />
+        <div class="controls" style="justify-content:center; margin-top:10px;">
+          <button id="download-single" type="button">Download single model plot</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Special-case plot container (separate) -->
+    <div class="plot-container" id="abs-container" style="margin-top: 20px;">
+      <h3 id="abs-title">Aggregate |xG − Observed| %</h3>
+      <img id="abs-img" src="" alt="Aggregate |xG − Observed| % plot" />
+      <div class="controls" style="justify-content:center; margin-top:10px;">
+        <button id="download-abs" type="button">Download |xG − Observed| % plot</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ---------------- Labels ---------------- */
+
+const analysisLabels = {
+  "2015-2024": "2015-2024",
+  "2020-2024": "2020-2024"
+};
+
+const analysisDescriptions = {
+  "2015-2024": `
+    <strong>Text for analysis 1</strong>
+    <ul>
+      <li>Placeholder description for 2015–2024.</li>
+      <li>Replace with your write-up.</li>
+    </ul>
+  `,
+  "2020-2024": `
+    <strong>Text for analysis 2</strong>
+    <ul>
+      <li>Placeholder description for 2020–2024.</li>
+      <li>Replace with your write-up.</li>
+    </ul>
+  `
+};
+
+/* Metric order / labels */
+const metricOrder = ["avglogloss", "xG_obs_diff", "xG_obs_diff_pct"];
+const metricLabels = {
+  "avglogloss": "Avg log loss",
+  "xG_obs_diff": "xG − Observed",
+  "xG_obs_diff_pct": "(xG − Observed) %"
+};
+
+/* Special-case (separate plot container) */
+const absMetricKey = "abs_xG_obs_diff_pct";
+const absMetricLabel = "|xG − Observed| %";
+
+const modelLabels = {
+  "1": "Model 1",
+  "2": "Model 2",
+  "3": "Model 3"
+};
+
+/* ---------------- DOM ---------------- */
+
+const analysisSel = document.getElementById("analysis-select");
+const metricSel = document.getElementById("metric-select");
+const modelSel = document.getElementById("model-select");
+
+const aggImg = document.getElementById("agg-img");
+const singleImg = document.getElementById("single-img");
+const absImg = document.getElementById("abs-img");
+
+const aggTitle = document.getElementById("agg-title");
+const singleTitle = document.getElementById("single-title");
+const absTitle = document.getElementById("abs-title");
+
+const aggContainer = document.getElementById("agg-container");
+const singleContainer = document.getElementById("single-container");
+const absContainer = document.getElementById("abs-container");
+
+const toggleAggBtn = document.getElementById("toggle-agg");
+const toggleSingleBtn = document.getElementById("toggle-single");
+const toggleAbsBtn = document.getElementById("toggle-abs");
+
+const downloadAggBtn = document.getElementById("download-agg");
+const downloadSingleBtn = document.getElementById("download-single");
+const downloadAbsBtn = document.getElementById("download-abs");
+
+/* ---------------- Options from filesystem ----------------
+Based on xGRat-filestructure.txt:
+- plots/<analysis>/{avglogloss,xG_obs_diff,xG_obs_diff_pct,abs_xG_obs_diff_pct}.png
+- plots/<analysis>/singlemodel/model-<1|2|3>-{avglogloss,xG_obs_diff,xG_obs_diff_pct}.png
+*/
+
+/* Available analyses (directories under plots/) */
+const analyses = ["2015-2024", "2020-2024"];
+
+/* ---------------- Helpers ---------------- */
+
+function populateSelect(selectEl, options, labelsDict) {
+  selectEl.innerHTML = "";
+  options.forEach(opt => selectEl.add(new Option(labelsDict?.[opt] ?? opt, opt)));
+}
+
+function updateAnalysisDescription() {
+  const descElem = document.getElementById("analysis-description");
+  const key = analysisSel.value;
+  descElem.innerHTML = analysisDescriptions[key] || "";
+}
+
+function buildAggregatePath(analysisKey, metricKey) {
+  return {
+    src: `plots/${analysisKey}/${metricKey}.png`,
+    title: `${analysisLabels[analysisKey] || analysisKey}: Aggregate — ${(metricLabels[metricKey] || metricKey)}`
+  };
+}
+
+function buildSingleModelPath(analysisKey, modelKey, metricKey) {
+  return {
+    src: `plots/${analysisKey}/singlemodel/model-${modelKey}-${metricKey}.png`,
+    title: `${analysisLabels[analysisKey] || analysisKey}: ${modelLabels[modelKey] || ("Model " + modelKey)} — ${(metricLabels[metricKey] || metricKey)}`
+  };
+}
+
+function buildAbsPath(analysisKey) {
+  return {
+    src: `plots/${analysisKey}/${absMetricKey}.png`,
+    title: `${analysisLabels[analysisKey] || analysisKey}: Aggregate — ${absMetricLabel}`
+  };
+}
+
+function updatePlots() {
+  const analysisKey = analysisSel.value;
+  const metricKey = metricSel.value;
+  const modelKey = modelSel.value;
+
+  const agg = buildAggregatePath(analysisKey, metricKey);
+  const single = buildSingleModelPath(analysisKey, modelKey, metricKey);
+  const abs = buildAbsPath(analysisKey);
+
+  aggImg.src = agg.src;
+  singleImg.src = single.src;
+  absImg.src = abs.src;
+
+  aggTitle.textContent = agg.title;
+  singleTitle.textContent = single.title;
+  absTitle.textContent = abs.title;
+}
+
+/* ---------------- Event listeners ---------------- */
+
+analysisSel.addEventListener("change", () => {
+  updateAnalysisDescription();
+  updatePlots();
+});
+
+metricSel.addEventListener("change", updatePlots);
+modelSel.addEventListener("change", updatePlots);
+
+/* toggles */
+toggleAggBtn.addEventListener("click", () => aggContainer.classList.toggle("hidden"));
+toggleSingleBtn.addEventListener("click", () => singleContainer.classList.toggle("hidden"));
+toggleAbsBtn.addEventListener("click", () => absContainer.classList.toggle("hidden"));
+
+/* downloads */
+function downloadCurrent(src) {
+  if (!src) return;
+  const a = document.createElement("a");
+  a.href = src;
+  a.download = src.split("/").pop();
+  a.click();
+}
+downloadAggBtn.addEventListener("click", () => downloadCurrent(aggImg.src));
+downloadSingleBtn.addEventListener("click", () => downloadCurrent(singleImg.src));
+downloadAbsBtn.addEventListener("click", () => downloadCurrent(absImg.src));
+
+/* ---------------- Start page ---------------- */
+
+populateSelect(analysisSel, analyses, analysisLabels);
+populateSelect(metricSel, metricOrder, metricLabels);
+populateSelect(modelSel, ["1","2","3"], modelLabels);
+
+updateAnalysisDescription();
+updatePlots();
+
+</script>
+</body>
+</html>
