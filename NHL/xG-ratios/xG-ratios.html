@@ -103,10 +103,19 @@
     gap: 20px;
     justify-content: center;
   }
+
   .plot-container {
     text-align: center;
     flex: 1 1 400px;
   }
+
+  #abs-container {
+    flex: 1 1 100%;
+    max-width: 630px;
+    margin: 20px auto;
+  }
+
+
   .plot-container h3 {
     margin-bottom: 0.5em;
   }
@@ -152,15 +161,61 @@
   </div>
 
   <div class="main">
-    <b>This page summarizes results from an expected-goals (xG) modeling/validation exercise.</b>
-    Replace this text with your final write-up.<br><br>
-
+    <b>This analysis attempts to identify which factors have a substantial impact on shot outcomes in the National Hockey League (NHL).</b> Presumably, there are a multitude of applicable factors: shot location, shot type (e.g. slapshot, wrist shot, etc.), whether the shot came off a rebound or not. Here, I develop a quantitative and graphical an exploration of data set representing a record of NHL shots, and influence of various "conditions" on shot outcomes. <br><br>
+    
+    The Python code used for this analysis is available on my <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG">GitHub</a>. <br>
     <hr>
-    <h1>Results</h1>
+    <h1>Data & Methods</h1>
+    The dataset for this project comes from <a href="https://moneypuck.com/data.htm">MoneyPuck</a>. They provide CSV files which record (presumably) every shot attempt event in a given NHL season. I assume this data ultimately from the NHL itself, though the authors at MoneyPuck have made some additions, including an adjustment for arena-by-arena biases that are known and documented in the hockey analytics community. It is worth noting that these data are collected manually, by shot trackers staffed by the NHL. Classifying a shot as a wrist shot or snap shot, for example, comes from an individual's subjective interpretation. That said, these data sets are the most comprehensive, publicly available data sets on hockey shots, and they are widely used in the analytics community.<br><br>
+    
+    It is worth noting that the NHL has recently developed an advanced system for digitally tracking player & puck positions digitally, in real time. To my understanding, these data sets are only available for analytics departments in NHL clubs. This system would give provide data related to shot speed, vertical shot location, spatial proximity to opposing players, proximity in time to recent passes, etc., all which are not available in the MoneyPuck data sets but would undoubtedly have a strong influence on shot outcomes.<br><br>
+    
+    There are approx. 100,000 shot "events" in each season, and this exploratory analysis is built on data from seasons inclusive of 2015-2024. Each event/record comes with dozens of attributes or conditions, including "x" and "y" co-ordinates of the events, identity of the shooter, the goalie, number of attacking forwards on the ice---the list goes on, and on. Notably, the <b>outcome</b> of the shot attempt is recorded, which three options: a shot on goal (SOG; the goalie saved the shot); a miss (shot did not hit the net, or hit the post); or a goal. Any individual event is commonly referred to as a Shot Attempt, or SAT.<br><br>
+    
+    On this page, I attempt to identify which attributes or conditions have a strong influence on whether any given attempt results in a goal. These attributes can then (later) be built into an expected goal model, which predicts the likelihood any given shot attempt results in a goal.<br><br>
 
-    <!-- Analysis selector -->
+    My analysis is based upon 2D histograms of the location of the event. One axis is mapped to the straight-line (i.e. "radial") distance from the event to the net, and while the other axis maps the angle the shot location makes w.r.t. the length-wise centre line of the ice. Presumably, shot location is one of, if not the most important factor in determining a shot outcome. The influence of all other conditions and attributes will be measured according to their influence on histograms in this 2D space. My plots are described as follows:<br><br>
+
+    Available conditions, where (B) is a binary variable and (M) is a multi-value variable:
+    <ul>
+        <li><b>Regular season vs. playoffs</b> (B). Did this shot occur during a regular season or playoff game?</li>
+        <li><b>Rebounds</b> (B). Did this shot occur during a rebound?</li>
+        <li><b>Forward vs. Defence</b> (B). Did this shot occur during a shot from a forward or defence?</li>
+        <li><b>Shot type</b> (M). Available options: wrist shot, snap shot, slap shot, backhand, deflection, tip-in, wraparound.</li>
+        <li><b>Playing strength</b> (M). Available options: 5v5, 5v4, 4v5, 4v4, 3v3, 5v3, 6v5.</li>
+    </ul>
+
+    Three different models:
+    <ul>
+        <li><b>Model 1</b>: all conditions are included in the model</li>
+        <li><b>Model 2</b>: all conditions except for the regular season vs. playoffs condition are included.</li>
+        <li><b>Model 3</b>: only the rebounds and forward vs. defence conditions are included.</li>
+    </ul>
+
+    Three metrics:
+    <ul>
+        <li><b>Log loss</b>: the log loss is the average negative log-likelihood of the model, which is a measure of how well the model fits the data. The lower the log loss, the better the model fits the data.</li>
+        <li><b>xG_obs_diff</b>: the xG_obs_diff is the difference between the observed xG and the expected xG for the model. The lower the xG_obs_diff, the better the model fits the data.</li>
+        <li><b>xG_obs_diff_pct</b>: the xG_obs_diff_pct is the xG_obs_diff expressed as a percentage.</li>
+    </ul>
+
+    Different plots/histograms for different attributes (what I call the shot "conditions") can be accessed via the drop-down menus. Pick which condition you want to explore (e.g. "Shot Type"), then pick a value for that condition (e.g. "Wrist Shot"), and finally pick the event outcome (e.g. "Goals". "Shot Attempts" displays all events). The plots will automatically update to reflect your choices.
+
+    <h1>Results & Interpretation</h1>
+
+    As mentioned above, the main technique in this analysis compares a subset of data, based on a specific shot condition, to a "reference" data set. I present a few unique "analyses" which use different reference datasets and zero-in on the effects on individual conditions. The different analyses can be selected from the first drop-down menu below. Analysis "1" takes a broad look at a list of conditions, while analyses "2" and "3" focus on specific conditions of interest. <br><br>
+
+    <b>General thoughts on interpreting the plots:</b>
+    <ul>
+        <li>ΔxG histogram: red values mean shots from that distance-angle location were more likely to result in a goal for the chosen subset, when compared to the reference. Blue values mean shots were less likely to go in.</li>
+        <li>Impact of Conditions, y-axis: values above zero mean that, regardless of shot location (i.e. on average), shot events under these conditions are more likely to result in goals when compared to the reference data set.</li>
+        <li>Impact of Conditions, x-axis: values above zero means that, when the shot location is taken into account, these conditions are more likely to result in goals than shot attempts in the reference set.</li>
+    </ul>
+    <br>
+
+    <!-- Data set selector -->
     <div class="controls">
-      <label for="analysis-select"><b>Analysis:</b></label>
+      <label for="analysis-select"><b>Data set:</b></label>
       <select id="analysis-select"></select>
     </div>
 
@@ -182,9 +237,9 @@
     <!-- Toggle buttons (same location) -->
     <div class="controls">
       <p style="font-size: 18px; margin-top: 0.5em; margin-bottom: 0.5em;">Toggle show/hide:</p>
-      <button id="toggle-agg" type="button">Aggregate plot</button>
-      <button id="toggle-single" type="button">Single model plot</button>
-      <button id="toggle-abs" type="button">|xG − Observed| % plot</button>
+      <button id="toggle-agg" type="button">All models</button>
+      <button id="toggle-single" type="button">Single model</button>
+      <button id="toggle-abs" type="button">|Goal diff.| (%)</button>
     </div>
   </div>
 
@@ -192,15 +247,15 @@
     <!-- Two side-by-side plot containers -->
     <div class="plots-wrapper">
       <div class="plot-container" id="agg-container">
-        <h3 id="agg-title">Aggregate plot</h3>
+        <h3 id="agg-title">All models</h3>
         <img id="agg-img" src="" alt="Aggregate plot" />
         <div class="controls" style="justify-content:center; margin-top:10px;">
-          <button id="download-agg" type="button">Download aggregate plot</button>
+          <button id="download-agg" type="button">Download all models plot</button>
         </div>
       </div>
 
       <div class="plot-container" id="single-container">
-        <h3 id="single-title">Single model plot</h3>
+        <h3 id="single-title">Single model</h3>
         <img id="single-img" src="" alt="Single model plot" />
         <div class="controls" style="justify-content:center; margin-top:10px;">
           <button id="download-single" type="button">Download single model plot</button>
@@ -210,10 +265,10 @@
 
     <!-- Special-case plot container (separate) -->
     <div class="plot-container" id="abs-container" style="margin-top: 20px;">
-      <h3 id="abs-title">Aggregate |xG − Observed| %</h3>
+      <h3 id="abs-title">Absolute value of Goal differential (%)</h3>
       <img id="abs-img" src="" alt="Aggregate |xG − Observed| % plot" />
       <div class="controls" style="justify-content:center; margin-top:10px;">
-        <button id="download-abs" type="button">Download |xG − Observed| % plot</button>
+        <button id="download-abs" type="button">Download |Goal diff.| (%) plot</button>
       </div>
     </div>
   </div>
@@ -246,9 +301,9 @@ const analysisDescriptions = {
 /* Metric order / labels */
 const metricOrder = ["avglogloss", "xG_obs_diff", "xG_obs_diff_pct"];
 const metricLabels = {
-  "avglogloss": "Avg log loss",
-  "xG_obs_diff": "xG − Observed",
-  "xG_obs_diff_pct": "(xG − Observed) %"
+  "avglogloss": "Log loss",
+  "xG_obs_diff": "Goal difference",
+  "xG_obs_diff_pct": "Goal difference (%)"
 };
 
 /* Special-case (separate plot container) */
@@ -312,14 +367,16 @@ function updateAnalysisDescription() {
 function buildAggregatePath(analysisKey, metricKey) {
   return {
     src: `plots/${analysisKey}/${metricKey}.png`,
-    title: `${analysisLabels[analysisKey] || analysisKey}: Aggregate — ${(metricLabels[metricKey] || metricKey)}`
+    //title: `${analysisLabels[analysisKey] || analysisKey}: Aggregate — ${(metricLabels[metricKey] || metricKey)}`
+    title: `All models (${analysisLabels[analysisKey] || analysisKey})`
   };
 }
 
 function buildSingleModelPath(analysisKey, modelKey, metricKey) {
   return {
     src: `plots/${analysisKey}/singlemodel/model-${modelKey}-${metricKey}.png`,
-    title: `${analysisLabels[analysisKey] || analysisKey}: ${modelLabels[modelKey] || ("Model " + modelKey)} — ${(metricLabels[metricKey] || metricKey)}`
+    //title: `${analysisLabels[analysisKey] || analysisKey}: ${modelLabels[modelKey] || ("Model " + modelKey)} — ${(metricLabels[metricKey] || metricKey)}`
+    title: `${modelLabels[modelKey] || ("Model " + modelKey)} (${analysisLabels[analysisKey] || analysisKey})`
   };
 }
 
@@ -343,9 +400,10 @@ function updatePlots() {
   singleImg.src = single.src;
   absImg.src = abs.src;
 
+  // Uncomment to have dynamic titles based on the chosen drop-down values
   aggTitle.textContent = agg.title;
   singleTitle.textContent = single.title;
-  absTitle.textContent = abs.title;
+  /*absTitle.textContent = abs.title;*/
 }
 
 /* ---------------- Event listeners ---------------- */
