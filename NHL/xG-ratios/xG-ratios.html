@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>xG ratios and model diagnostics</title>
+<title>Ratio-based xG model</title>
 <style>
   body {
     font-family: Tahoma, Arial, sans-serif;
@@ -154,67 +154,70 @@
 
 <body>
   <div class="header">
-    <h1>xG ratios and model diagnostics</h1>
+    <h1>Assessing the performance of a "ratio-based" xG model.</h1>
     <p>Joey Rucska</p>
-    <p style="margin-bottom: 3rem;">Last updated on <!-- TODO: update date -->.</p>
-    <a href="#" class="top-link">Link to code</a>
+    <p style="margin-bottom: 3rem;">Last updated on December 17, 2025.</p>
+    <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG" class="top-link">Link to code</a>
   </div>
 
   <div class="main">
-    <b>This analysis attempts to identify which factors have a substantial impact on shot outcomes in the National Hockey League (NHL).</b> Presumably, there are a multitude of applicable factors: shot location, shot type (e.g. slapshot, wrist shot, etc.), whether the shot came off a rebound or not. Here, I develop a quantitative and graphical an exploration of data set representing a record of NHL shots, and influence of various "conditions" on shot outcomes. <br><br>
+    <b>In this analysis, I develop a simple expected goals (xG) model based on one ratio: number of goals over number of shot attempts.</b> By determining this ratio for a specific set of conditions: shot location, shot type, player position, etc., this ratio&mdash;in theory&mdash;becomes more representative of the true likelihood a given shot with those conditions will result in a goal. On this page, I describe how I develop and evaluate the performance of this model. <br><br>
     
     The Python code used for this analysis is available on my <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG">GitHub</a>. <br>
     <hr>
 
-    <a href="https://rucskajj.github.io/Data-Science-Projects/NHL/Conditions/Conditions.html">Link to Conditions analysis page.</a>
+    <h1>Data & Procedure</h1>
 
-    <h1>Data & Methods</h1>
-    The dataset for this project comes from <a href="https://moneypuck.com/data.htm">MoneyPuck</a>. They provide CSV files which record (presumably) every shot attempt event in a given NHL season. I assume this data ultimately from the NHL itself, though the authors at MoneyPuck have made some additions, including an adjustment for arena-by-arena biases that are known and documented in the hockey analytics community. It is worth noting that these data are collected manually, by shot trackers staffed by the NHL. Classifying a shot as a wrist shot or snap shot, for example, comes from an individual's subjective interpretation. That said, these data sets are the most comprehensive, publicly available data sets on hockey shots, and they are widely used in the analytics community.<br><br>
-    
-    It is worth noting that the NHL has recently developed an advanced system for digitally tracking player & puck positions digitally, in real time. To my understanding, these data sets are only available for analytics departments in NHL clubs. This system would give provide data related to shot speed, vertical shot location, spatial proximity to opposing players, proximity in time to recent passes, etc., all which are not available in the MoneyPuck data sets but would undoubtedly have a strong influence on shot outcomes.<br><br>
-    
-    There are approx. 100,000 shot "events" in each season, and this exploratory analysis is built on data from seasons inclusive of 2015-2024. Each event/record comes with dozens of attributes or conditions, including "x" and "y" co-ordinates of the events, identity of the shooter, the goalie, number of attacking forwards on the ice---the list goes on, and on. Notably, the <b>outcome</b> of the shot attempt is recorded, which three options: a shot on goal (SOG; the goalie saved the shot); a miss (shot did not hit the net, or hit the post); or a goal. Any individual event is commonly referred to as a Shot Attempt, or SAT.<br><br>
-    
-    On this page, I attempt to identify which attributes or conditions have a strong influence on whether any given attempt results in a goal. These attributes can then (later) be built into an expected goal model, which predicts the likelihood any given shot attempt results in a goal.<br><br>
-
-    My analysis is based upon 2D histograms of the location of the event. One axis is mapped to the straight-line (i.e. "radial") distance from the event to the net, and while the other axis maps the angle the shot location makes w.r.t. the length-wise centre line of the ice. Presumably, shot location is one of, if not the most important factor in determining a shot outcome. The influence of all other conditions and attributes will be measured according to their influence on histograms in this 2D space. My plots are described as follows:<br><br>
-
-    Available conditions, where (B) is a binary variable and (M) is a multi-value variable:
+    The dataset for this project comes from <a href="https://moneypuck.com/data.htm">MoneyPuck</a>. There are approx. 100,000 shot "events" in any given season's worth of data, and for my models I use data from seasons inclusive of 2015-2024. I discuss the quality of this data set in a <a href="https://rucskajj.github.io/Data-Science-Projects/NHL/Conditions/Conditions.html">previous section</a> of this analysis. The goal of that section is get an overall glimpse of the data set, and to identify which conditions have the strongest influence on shot outcomes (goal/no goal), which informs the development of my xG model here. From that analysis, I have identified the following conditions/factors as the most important, where (B) is a binary variable and (M) is a multi-value variable:
     <ul>
         <li><b>Regular season vs. playoffs</b> (B). Did this shot occur during a regular season or playoff game?</li>
         <li><b>Rebounds</b> (B). Did this shot occur during a rebound?</li>
         <li><b>Forward vs. Defence</b> (B). Did this shot occur during a shot from a forward or defence?</li>
-        <li><b>Shot type</b> (M). Available options: wrist shot, snap shot, slap shot, backhand, deflection, tip-in, wraparound.</li>
-        <li><b>Playing strength</b> (M). Available options: 5v5, 5v4, 4v5, 4v4, 3v3, 5v3, 6v5.</li>
+        <li><b>Shot type</b> (M). 7 available options: wrist shot, snap shot, slap shot, backhand, deflection, tip-in, wraparound.</li>
+        <li><b>Playing strength</b> (M). 7 available options: 5v5, 5v4, 4v5, 4v4, 3v3, 5v3, 6v5.</li>
     </ul>
 
-    Three different models:
+    With these insights in hand, my procedure for building & testing my "ratio-based" xG model is as follows:
+    <ol type="1">
+        <li>Split all data into two data sets: 1) a "<b>testing</b>"" data set comprising one season's worth of shots 2) a "<b>training</b>" data set, which all shots from all other seasons.</li>
+        <li>For the <b>training</b> set, filter the data according to a specific set of condition values. For example, a set using all conditions could be: (Regular season game; non-rebound; forward player; wrist shot; 5v5). For all shot attempts belonging to this set of conditions, calculate (and save) a 2D histogram of xG = num. goals/num. shot attempts. (This histogram is in distance-angle space, and is the <u>same idea</u> as the greyscale xG histograms presented in the <a href="https://rucskajj.github.io/Data-Science-Projects/NHL/Conditions/Conditions.html">previous section</a> of my analysis.)</li>
+        <li><u>For all unique combinations of condition-value pairs</u>, repeat the previous step. This calculates (and saves) a unique xG histogram for each set of condition-value pairs.</li>
+        <li>For every shot attempt/record in the <b>testing</b> set, retrieve the appropriate xG value from the applicable 2D histogram. That is, 1) identify the conditions for this shot (rebound? F/D? etc.) and load that histogram, 2) identify the appropriate bin in that histogram according to the location of that shot. The xG value in that bin is the xG value for that shot.</li>
+        <li>Use all xG values for all shots in the <b>testing</b> set to assess the performance of the model. This is discussed in detail below.</li>
+    </ol>
+
+    Note: I repeat these steps using different seasons for the testing data, to see how the performance varies depending on the individual season that is chosen.<br><br>
+
+    I was curious to how influential these conditionals truly are. Hence, I built three "different" models, which consider a different set of conditions, while ignoring the rest:
     <ul>
-        <li><b>Model 1</b>: all conditions are included in the model</li>
-        <li><b>Model 2</b>: all conditions except for the regular season vs. playoffs condition are included.</li>
-        <li><b>Model 3</b>: only the rebounds and forward vs. defence conditions are included.</li>
+        <li><b>Model 1</b>: all conditions are included (392 condition sets).</li>
+        <li><b>Model 2</b>: all conditions except for the regular season vs. playoffs condition are included (196 condition sets).</li>
+        <li><b>Model 3</b>: only the rebounds and forward vs. defence conditions are included (4 condition sets).</li>
     </ul>
 
-    Three metrics:
+    <h1>Analysis Methods</h1>
+
+    To assess the ability of these models to predict goals, I use three metrics (which are presented on the y-axes of the plots below):
     <ul>
         <li><b>Log loss</b>: the log loss is the average negative log-likelihood of the model, which is a measure of how well the model fits the data. The lower the log loss, the better the model fits the data.</li>
-        <li><b>xG_obs_diff</b>: the xG_obs_diff is the difference between the observed xG and the expected xG for the model. The lower the xG_obs_diff, the better the model fits the data.</li>
-        <li><b>xG_obs_diff_pct</b>: the xG_obs_diff_pct is the xG_obs_diff expressed as a percentage.</li>
+        <li><b>Goal difference</b>: the difference between the <b>predicted</b> number of goals and the <b>observed</b> number of goals in the <b>testing</b> data set. The predicted number is exactly equal to the sum all of xG values. The observed number is simply a count of the number of goals that actually occurred (recall, the outcome of each shot is available: SOG, miss, goal).</li>
+        <li><b>Goal difference (%)</b>: the same difference above, expressed as percent where the <u>observed goals</u> is the denominator.</li>
     </ul>
 
-    Different plots/histograms for different attributes (what I call the shot "conditions") can be accessed via the drop-down menus. Pick which condition you want to explore (e.g. "Shot Type"), then pick a value for that condition (e.g. "Wrist Shot"), and finally pick the event outcome (e.g. "Goals". "Shot Attempts" displays all events). The plots will automatically update to reflect your choices.
+    You can pick which metric plot you want to see via the "Metric" drop-down. <br><br>
+
+    The plots I present are as follows:
+    <ul>
+        <li><b>All models</b>: A plot of the chosen metric for all three models against the minimum number of events/shot attempts (SAT) in the xG bins. While looping through all shots in the testing data, I sorted the pulled xG values according to various (arbitrary) thresholds for the minimum number of records/shots in that bin. The side-length of the square markers is proportional to the ratio of the records/shots included at that minimum number of events. The empty square is the maximum possible square size. The lines are the mean values across all analyses with different choices for the training data set (i.e. a "horizontal" average of the "single model" plots); shaded regions denote one standard deviation above and below the mean.</li>
+    </ul>
+    <ul>
+        <li><b>Single model</b>: A plot of the chosen metric for an individual models against the season which was used as the testing data. Individual lines track this metric according to different values for the minimum event threshold (see point above).</li>
+        <li><b>|Goal Diff| (%)</b>: The same data as the lines for the "Metric"="Goal difference %", with an absolute value applied and shaded regions removed.</li>
+    </ul>
+
+    Lastly, I also present two different analyses which use a different base data set. One analysis uses the data for all 10 seasons inclusive of 2015-2024, while the other analysis uses a smaller data set comprised of the 5 seasons inclusive of 2020-2024.<br>
 
     <h1>Results & Interpretation</h1>
-
-    As mentioned above, the main technique in this analysis compares a subset of data, based on a specific shot condition, to a "reference" data set. I present a few unique "analyses" which use different reference datasets and zero-in on the effects on individual conditions. The different analyses can be selected from the first drop-down menu below. Analysis "1" takes a broad look at a list of conditions, while analyses "2" and "3" focus on specific conditions of interest. <br><br>
-
-    <b>General thoughts on interpreting the plots:</b>
-    <ul>
-        <li>ΔxG histogram: red values mean shots from that distance-angle location were more likely to result in a goal for the chosen subset, when compared to the reference. Blue values mean shots were less likely to go in.</li>
-        <li>Impact of Conditions, y-axis: values above zero mean that, regardless of shot location (i.e. on average), shot events under these conditions are more likely to result in goals when compared to the reference data set.</li>
-        <li>Impact of Conditions, x-axis: values above zero means that, when the shot location is taken into account, these conditions are more likely to result in goals than shot attempts in the reference set.</li>
-    </ul>
-    <br>
 
     <!-- Data set selector -->
     <div class="controls">
@@ -286,17 +289,15 @@ const analysisLabels = {
 
 const analysisDescriptions = {
   "2015-2024": `
-    <strong>Text for analysis 1</strong>
+    <strong>Text for 2015-2024 analysis.</strong>
     <ul>
-      <li>Placeholder description for 2015–2024.</li>
-      <li>Replace with your write-up.</li>
+      <li>Detailed write-up in progress.</li>
     </ul>
   `,
   "2020-2024": `
-    <strong>Text for analysis 2</strong>
+    <strong>Text for 2020-2014 analysis.</strong>
     <ul>
-      <li>Placeholder description for 2020–2024.</li>
-      <li>Replace with your write-up.</li>
+      <li>Detailed write-up in progress.</li>
     </ul>
   `
 };

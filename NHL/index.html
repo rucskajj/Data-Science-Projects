@@ -127,7 +127,6 @@
     </div>
 
     <div class="main">
-        <h1>Personal Data Science/Research Projects</h1>
 
         <h2><a href="https://rucskajj.github.io/Data-Science-Projects/NHL/Conditions/Conditions.html">Conditions Analysis</a></h2>
         <div class="row">
@@ -135,9 +134,9 @@
                 <a href="https://rucskajj.github.io/Data-Science-Projects/NHL/Conditions/Conditions.html"><img src="./images/rink-contour-5v5-SAT.png" alt="A contour plot of SAT events overlaid on a map of an NHL rink." style="float:left;width:100%"></a>
             </div>
             <div class="column-right">
-                A map of walkable accessibility for the Hamilton Street Railway (HSR) public transit network. For over 60,000 buildings in the city, the number of buses arriving with walking distance is calculated, achieving a "spatial resolution" of < 100 metres in this metric along the entirety of the HSR network.
-                <br><br>
-                The calculations are based on algorithm from the QGIS python module, and the <a href="https://qgiscloud.com/rucskajj/HSR_transit_accessibility_truncated7_cloud/">webmap</a> was made in the desktop QGIS application.
+                <b>This analysis attempts to identify which conditions have a substantial impact on shot outcomes (goal/no goal) in the National Hockey League (NHL).</b> Presumably, there are a multitude of conditions or factors with a measureable influence: shot location, shot type (e.g. slapshot, wrist shot, etc.), whether the shot came off a rebound or not, etc. Here, I develop a quantitative and graphical exploration of a data set representing a record of NHL shots, and the influence of various "conditions" on shot outcomes. <br><br>
+
+                Identifying the strongest factors can help inform the development of so-called expected goals (xG) models through the links below.
             </div>
         </div>
 
@@ -147,9 +146,7 @@
                 <a href="https://rucskajj.github.io/Data-Science-Projects/NHL/xG-ratios/xG-ratios.html"><img src="./images/avglogloss-20-24.png" alt="A plot of log-loss for the multiple models in the ratio-based xH model analysis." style="float:left;width:100%"></a>
             </div>
             <div class="column-right">
-                A map of walkable accessibility for the Hamilton Street Railway (HSR) public transit network. For over 60,000 buildings in the city, the number of buses arriving with walking distance is calculated, achieving a "spatial resolution" of < 100 metres in this metric along the entirety of the HSR network.
-                <br><br>
-                The calculations are based on algorithm from the QGIS python module, and the <a href="https://qgiscloud.com/rucskajj/HSR_transit_accessibility_truncated7_cloud/">webmap</a> was made in the desktop QGIS application.
+                <b>In this analysis, I develop a simple expected goals (xG) model based on one ratio: number of goals over number of shot attempts.</b> By determining this ratio for a specific set of conditions: shot location, shot type, player position, etc., this ratio&mdash;in theory&mdash;becomes more representative of the true likelihood a given shot with those conditions will result in a goal. On this page, I describe how I develop and evaluate the performance of this model.
             </div>
         </div>
     </div>
