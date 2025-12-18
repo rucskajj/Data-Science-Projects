@@ -55,6 +55,14 @@
     text-decoration: underline;
   }
 
+    ul li {
+            margin-bottom: 0.25lh; /* Adjust the value as needed */
+    }
+
+    ul {
+            line-height: 1.5; /* Adjust the value for more or less space */
+    }
+
   /* Plots section */
   .plots {
     background-color: white;
@@ -154,14 +162,14 @@
 
 <body>
   <div class="header">
-    <h1>Assessing the performance of a "ratio-based" xG model.</h1>
+    <h1>Building & assessing a "ratio-based" xG model for NHL shots</h1>
     <p>Joey Rucska</p>
     <p style="margin-bottom: 3rem;">Last updated on December 17, 2025.</p>
     <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG" class="top-link">Link to code</a>
   </div>
 
   <div class="main">
-    <b>In this analysis, I develop a simple expected goals (xG) model based on one ratio: number of goals over number of shot attempts.</b> By determining this ratio for a specific sets of conditions: shot location, shot type, player position, etc., this ratio&mdash;in theory&mdash;becomes more representative of the true likelihood a given shot with those conditions will result in a goal. On this page, I describe how I develop and evaluate the performance of this model. <br><br>
+    <b>In this analysis, I develop a simple expected goals (xG) model based on one ratio: number of goals over number of shot attempts.</b> By determining this ratio for a specific sets of conditions: shot location, shot type, player position, etc., this ratio&mdash;in theory&mdash;becomes more representative of the true likelihood a given shot with those conditions will result in a goal. A good xG model is a useful tool for assessing a team's or individual's ability to drive offense. On this page, I describe how I develop and evaluate the performance of this model. <br><br>
     
     The Python code used for this analysis is available on my <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG">GitHub</a>. <br>
     <hr>
@@ -190,7 +198,7 @@
 
     I was curious to see how influential these conditionals truly are. So, I built three "different" models, which consider a different set of conditions, while ignoring the rest:
     <ul>
-        <li><b>Model 1</b>: all conditions are included (392 condition sets).</li>
+        <li><b>Model 1</b>: all conditions are included (392 unique condition sets, i.e. xG histograms).</li>
         <li><b>Model 2</b>: all conditions except for the regular season vs. playoffs condition are included (196 condition sets).</li>
         <li><b>Model 3</b>: only the rebounds and forward vs. defence conditions are included (4 condition sets).</li>
     </ul>
@@ -199,7 +207,7 @@
 
     To assess the ability of these models to predict goals, I use three metrics (which are presented on the y-axes of the plots below):
     <ul>
-        <li><b>Log loss</b>: this is a standard measure of how similar a model prediction is to an outcome which is commonly used in logistic regression-based machine learning models. For each shot/record, a log loss value is calculated, then the mean log loss value produced by each model is calculated. The equation I use is below, where "g" is the outcome of the shot; g = 1 for a goal, g = 0 for no goal. "xG" is the expected goals or xG value for that shot.<p><img src="./images/logloss-equation.png" alt="An image showing the equation used for logloss." style="border:none; display:block; margin: 0 auto; width:450px"></p></li>
+        <li><b>Log loss</b>: a standard measure of model performance, i.e. how similar a model prediction is to an "observed" outcome. This metric is commonly used to assess logistic regression-based machine learning models. In my analysis, for each shot/record, a log loss value is calculated, then the mean log loss value across all shots is calculated for each model. The equation I use is below, where "g" is the outcome of the shot; g = 1 for a goal, g = 0 for no goal. "xG" is the expected goals or xG value for that shot. Log loss is low when the prediction is similar to the outcome, and is exactly zero when g=1 and xG=1 or g=0 and xG=0, as these represent "perfect" predictions. Based on the xG histograms from the <a href="https://rucskajj.github.io/Data-Science-Projects/NHL/Conditions/Conditions.html">previous section</a>, xG values for a set of conditions typically peak around 0.2.<p><img src="./images/logloss-equation.png" alt="An image showing the equation used for logloss." style="border:none; display:block; margin: 0 auto; width:450px"></p></li>
         <li><b>Goal difference</b>: the difference between the <b>predicted</b> number of goals and the <b>observed</b> number of goals in the <b>testing</b> data set. The predicted number is exactly equal to the sum all of xG values. The observed number is simply a count of the number of goals that actually occurred (recall, the outcome of each shot is available: SOG, miss, goal).</li>
         <li><b>Goal difference (%)</b>: the same difference above, expressed as percent where the <u>observed goals</u> is the denominator.</li>
     </ul>
@@ -221,7 +229,7 @@
 
     <!-- Data set selector -->
     <div class="controls">
-      <label for="analysis-select"><b>Data set:</b></label>
+      <label for="analysis-select"><b>Analysis:</b></label>
       <select id="analysis-select"></select>
     </div>
 
@@ -289,16 +297,40 @@ const analysisLabels = {
 
 const analysisDescriptions = {
   "2015-2024": `
-    <strong>Text for 2015-2024 analysis.</strong>
+    <b>These plots & results are come from an analysis based on 10 seasons worth of data, from the years 2015-2024 (inclusive).</b> Explicitly, the <b>training</b> data is built off 9 seasons of data, while 1 season is reserved for <b>testing</b>. Thus, 10 different "rounds" of xG models were produced, where each of the 10 seasons individually "took turns" as the testing data. The All Models plots present statistical averages/summaries across the 10 "rounds", while the Single model displays the performance of each "round". <br><br>
+
+    The primary utility of log loss here is to compare the models to each other. Recall: low log loss is an indicator of strong model performance. At the moment, it is unclear to me whether 0.2 as an average value can be interpreted as "good" in a vacuum, and similarly whether decreases of 0.1 or 0.2 in this value are substantial. Some specific comments on the <b>log loss</b> plots:
     <ul>
-      <li>Detailed write-up in progress.</li>
+      <li>Looking at the All models plot, the most obvious trend is that (for Models 1 and 2), log loss decreases as we increase the minimum threshold for shot attempts in a bin. This is expected: restricting yourself to only using the model when there is a high number of samples should improve the performance of the model. With a higher the number of samples, the ratio the model is based off of becomes increasingly representative of the true likelihood shots under those conditions result in goals.</li>
+      <li>Of course, applying these kinds of restrictions means your model is ignoring or "giving up" on attempting to predict more fringe scenarios, where shots are apparently less likely to occur. The side length of the squares in this plot represents the proportion of the data set covered by the model under these restrictions. For a threshold of 100 SAT per bin, model 1 covers ~85% of the data set.</li>
+      <li>The trend of decreasing log loss with minimum SAT threshold does not apply to Model 3, however. This model is a very minimalistic, and attempts to make predictions based on only three conditions: shot location (with ~140 bins in distance-angle space), and two binary markers, rebounds & forward vs. defensive shooters. The performance of this model does not increase with SAT threshold, since there are so few conditions to split the data set, so the coverage mentioned in the previous point (tracked by the size of the squares) is fairly constant.</li>
+      <li>Looking at the single models plot, we see that there is substantial variation in log loss both in terms of 1) which season was used as the testing data (i.e. horizontally) and 2) the minimum SAT threshold, tracked by lines of different shades. The end-to-end horizontal variation in log loss is of order ~0.1, which is similar to the decrease in log loss going from a threshold of 10 to 100 for Models 1 & 2. I don't care so much that log loss increases vs. decreases, but that there is a <u>consistent, monotonic trend</u>. Professional hockey is dynamic; strategies are constantly evolving. This trend could be a sign that there is a real difference between how shot outcome behaves across the 2015-2025 decade. This result inspired my other analyses which focus on a narrower range of data.</li>
     </ul>
+
+    Goal difference is a more intuitive metric for model performance. It directly compares the number of goals predicted by the model (as a simple sum of likelihoods, i.e. xG) to the number of actual or "observed" goals present in the testing data set. Some specific comments on the <b>Goal diff</b> plots:
+    <ul>
+        <li>In the All models plots, like with log loss, there appears to be a minimal difference between the performance of Model 1 and Model 2. For the non-percentage difference, all three models perform similarly, but the in the percentage plot, Model 3 appears to perform better, as its shaded region (representing a standard deviation) is narrower. The only trend with SAT threshold is in the percentage plots: the spread in outcomes for Model 1 and Model 2 increases.</li>
+        <li>The averages values (solid lines) look quite convincing, hovering near zero. Indeed, the |Goal diff.| (%) plot shows these values are all less than 1%! However, this average is masking a very strong dependence with what data is used for the testing set, as seen in the Single model plots. There was a similar dependence seen in the log loss plots, which, as I discuss above, could be an indicator in true variation in the behaviour of shot outcomes across this decade.</li>
+    </ul>
+
+    So, what can we take away from this? Are these models good at making predictions? Which is best? To me, the easiest place to start is Goal diff %: in any individual "round" (single testing season), all models are able to predict the number of goals in an entire season to within 5-10%. Perhaps that is good enough, it depends on your tolerance. Model 3 performs best in Goal differential, but worse in log loss, which is an indicator that, on an individual, shot-to-shot basis, Model 3 is not as predictive as Model 1 or 2 (when these models are limited to bins with >50 events in them).<br><br>
+
+    The strong, monotonic dependence on these metrics with the chosen <b>testing</b> season is alarming to me, and an indicator that the <b>training</b> data set is perhaps too large in scope. There may be too much intrinsic variation in system behaviour across this decade to compile all of these data together. Clearly, testing the 2015-'16 & '16-'17 leads to the same behaviour, while testing the '22-'23 and '23-24' leads to opposite behaviour. This motivates my second Analysis, where I narrow the scope to 2020-2024 data, which I direct the interested reader to now.
   `,
   "2020-2024": `
-    <strong>Text for 2020-2014 analysis.</strong>
+    <b>These plots & results are come from an analysis based on 5 seasons worth of data, from the years 2020-2024 (inclusive).</b> Explicitly, the <b>training</b> data is built off 4 seasons of data, while 1 season is reserved for <b>testing</b>. Thus, 5 different "rounds" of xG models were produced, where each of the 5 seasons individually "took turns" as the testing data. The All Models plots present statistical averages/summaries across the 5 "rounds", while the Single model displays the performance of each "round".<br><br>
+
+    There are similar, general observations regarding these plots which apply to both analyses, such as how log loss decreases and the spread in Goal diff (%) increases with increasing SAT threshold. I will not repeat those discussions here, but instead focus on the meaningful <u>differences</u> between these results and the results from the 2015-2024 analysis. 
     <ul>
-      <li>Detailed write-up in progress.</li>
+      <li>Most importantly, the monotonic, "horizontal" trends in the single model plots has disappeared. This is true for both log loss and Goal diff. Ideally, if shot outcome predictors were consistent from year-to-year, the model should identically no matter which season is used at the testing data. This analysis is much closer to that truth than the 2015-2024 analysis.</li>
+      <li>Looking at the All models plots, the spread in log loss (signified by the shaded regions) is much narrower than in the 2015-2024 analysis. There is not a significant difference in how Model 1 and Model 2 performs for SAT thresholds of 50 and 100, for example.</li>
     </ul>
+
+    I believe my most substantial results thus far is discovering the intrinsic variation in shot outcomes across the 2015-2024 decade. Using this statistical, ratio-based technique, it is tempting to assume that increasing the amount of underlying "<b>training</b>" or reference data will produce better results. Of course, this is only true if the system behaviour is consistent across that data set! Here, I have cut the reference data set in half, and seen an <u>improvement</u> in model performance/consistency.<br><br>
+    
+    There is an obvious question regarding what exactly is so different from the 2015 and 2024 shot behaviour. Did teams start prioritizing some shots over others? Surely, in some way, this data set is capable of addressing that question. For now, I will leave that study for another time. I am more interested in how to build good xG models at the present.<br><br>
+
+    So, are <u>these</u> models "good"? The most logical direction for future work is to test these models against other methods, such as machine learning techniques. Indeed, I've been planning this development from the outset of this project, hence my persistent use of "training" and "test" language. Perhaps comparing the performance of ML models can provide insights to whether this technique based on careful filtering, binning, and a simple ratio is enough to reliably model NHL shot outcome behaviour.
   `
 };
 
