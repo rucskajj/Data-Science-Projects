@@ -161,7 +161,7 @@
   </div>
 
   <div class="main">
-    <b>In this analysis, I develop a simple expected goals (xG) model based on one ratio: number of goals over number of shot attempts.</b> By determining this ratio for a specific set of conditions: shot location, shot type, player position, etc., this ratio&mdash;in theory&mdash;becomes more representative of the true likelihood a given shot with those conditions will result in a goal. On this page, I describe how I develop and evaluate the performance of this model. <br><br>
+    <b>In this analysis, I develop a simple expected goals (xG) model based on one ratio: number of goals over number of shot attempts.</b> By determining this ratio for a specific sets of conditions: shot location, shot type, player position, etc., this ratio&mdash;in theory&mdash;becomes more representative of the true likelihood a given shot with those conditions will result in a goal. On this page, I describe how I develop and evaluate the performance of this model. <br><br>
     
     The Python code used for this analysis is available on my <a href="https://github.com/rucskajj/Data-Science-Projects/tree/main/NHL/xG">GitHub</a>. <br>
     <hr>
@@ -179,7 +179,7 @@
 
     With these insights in hand, my procedure for building & testing my "ratio-based" xG model is as follows:
     <ol type="1">
-        <li>Split all data into two data sets: 1) a "<b>testing</b>"" data set comprising one season's worth of shots 2) a "<b>training</b>" data set, which all shots from all other seasons.</li>
+        <li>Split all data into two data sets: 1) a "<b>testing</b>"" data set comprising one season's worth of shots 2) a "<b>training</b>" data set, which all shots from all other seasons. (I anticipate building a follow-up analysis based on machine learning models, hence the "testing"/"training" language.)</li>
         <li>For the <b>training</b> set, filter the data according to a specific set of condition values. For example, a set using all conditions could be: (Regular season game; non-rebound; forward player; wrist shot; 5v5). For all shot attempts belonging to this set of conditions, calculate (and save) a 2D histogram of xG = num. goals/num. shot attempts. (This histogram is in distance-angle space, and is the <u>same idea</u> as the greyscale xG histograms presented in the <a href="https://rucskajj.github.io/Data-Science-Projects/NHL/Conditions/Conditions.html">previous section</a> of my analysis.)</li>
         <li><u>For all unique combinations of condition-value pairs</u>, repeat the previous step. This calculates (and saves) a unique xG histogram for each set of condition-value pairs.</li>
         <li>For every shot attempt/record in the <b>testing</b> set, retrieve the appropriate xG value from the applicable 2D histogram. That is, 1) identify the conditions for this shot (rebound? F/D? etc.) and load that histogram, 2) identify the appropriate bin in that histogram according to the location of that shot. The xG value in that bin is the xG value for that shot.</li>
@@ -188,7 +188,7 @@
 
     Note: I repeat these steps using different seasons for the testing data, to see how the performance varies depending on the individual season that is chosen.<br><br>
 
-    I was curious to how influential these conditionals truly are. Hence, I built three "different" models, which consider a different set of conditions, while ignoring the rest:
+    I was curious to see how influential these conditionals truly are. So, I built three "different" models, which consider a different set of conditions, while ignoring the rest:
     <ul>
         <li><b>Model 1</b>: all conditions are included (392 condition sets).</li>
         <li><b>Model 2</b>: all conditions except for the regular season vs. playoffs condition are included (196 condition sets).</li>
@@ -199,7 +199,7 @@
 
     To assess the ability of these models to predict goals, I use three metrics (which are presented on the y-axes of the plots below):
     <ul>
-        <li><b>Log loss</b>: the log loss is the average negative log-likelihood of the model, which is a measure of how well the model fits the data. The lower the log loss, the better the model fits the data.</li>
+        <li><b>Log loss</b>: this is a standard measure of how similar a model prediction is to an outcome which is commonly used in logistic regression-based machine learning models. For each shot/record, a log loss value is calculated, then the mean log loss value produced by each model is calculated. The equation I use is below, where "g" is the outcome of the shot; g = 1 for a goal, g = 0 for no goal. "xG" is the expected goals or xG value for that shot.<p><img src="./images/logloss-equation.png" alt="An image showing the equation used for logloss." style="border:none; display:block; margin: 0 auto; width:450px"></p></li>
         <li><b>Goal difference</b>: the difference between the <b>predicted</b> number of goals and the <b>observed</b> number of goals in the <b>testing</b> data set. The predicted number is exactly equal to the sum all of xG values. The observed number is simply a count of the number of goals that actually occurred (recall, the outcome of each shot is available: SOG, miss, goal).</li>
         <li><b>Goal difference (%)</b>: the same difference above, expressed as percent where the <u>observed goals</u> is the denominator.</li>
     </ul>
