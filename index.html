@@ -16,7 +16,7 @@
 
         /* Style the header */
         .header {
-            padding: 30px 40px 10px;
+            padding: 30px 20px 40px 20px;
             text-align: center;
             background: #d44137;
             color: white;
@@ -33,6 +33,24 @@
             .header p {
                 font-size: 20px;
             }
+
+        .top-link {
+            text-decoration: none; /* removes default styling of the link. Underline etc.) */
+            background-color: rgba(86, 86, 86, 0.625); /* obvious */
+            color: white; /* text color */
+            margin: 1rem; /* adding 1rem of space around the button in all directions */
+            padding: 0.5rem 1rem; /* Adding space between the text and the border (first value is top and bottom. Second value is right and left) */
+            border-radius: 0.5rem; /* rounding the edges */
+            font-family: Tahoma, Arial, sans-serif;
+            font-size: 22px;
+            border: solid rgba(220, 220, 220, 0.625);
+        }
+
+        .top-link:hover {
+            color: black; /* text color */
+            background-color: rgba(220, 220, 220, 0.625); /* obvious */
+            border: solid rgba(86, 86, 86, 0.625);
+        }
 
 
         /* Main column */
@@ -122,8 +140,8 @@
 
     <div class="header">
         <h1>Data Science & Research Projects Portfolio</h1>
-        <h1>Joey Rucska</h1>
-        <p>Code available on my <a href="https://github.com/rucskajj/Data-Science-Projects">Github</a>.</p>
+        <h1 style="margin-bottom: 2rem;">Joey Rucska</h1>
+        <a href="https://github.com/rucskajj/Data-Science-Projects/" class="top-link">Github</a> <a href="https://www.linkedin.com/in/rucskajj/" class="top-link">LinkedIn</a>
     </div>
 
     <div class="main">
